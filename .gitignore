@@ -11,3 +11,7 @@ data/
 
 __pycache__/
 *.pyc
+
+# Notebook outputs
+notebooks/output/
+output/
