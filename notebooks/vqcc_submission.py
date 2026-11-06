@@ -25,11 +25,25 @@ VERIFY = 'quick'      # 'none' | 'quick' (minutes) | 'full' (official verifiers,
 USE_IMPROVED = {'invsqrt': True, 'dqi': False, 'dfthcsos': False}
 
 # %% [markdown]
+# ### Optional: run locally
+#
+# On Kaggle, leave this as `None`: the data is found with `kagglehub`.
+# To run on your own machine, set `LOCAL_DATA` to the folder where you unpacked the
+# competition data (the folder that contains `verifiers/` and `sample_submission/`,
+# or any folder above it).
+
+# %%
+LOCAL_DATA = None     # e.g. 'data/'
+
+# %% [markdown]
 # ## 1. Setup
 #
-# Finds the competition data (on Kaggle it is under `/kaggle/input`; locally set
-# the `VQCC_DATA` environment variable), imports kickmix and the official
-# verifiers, and prepares the output folder.
+# Finds the competition data, imports kickmix and the official verifiers, and
+# prepares the output folder. Data is looked up in this order:
+#
+# 1. `LOCAL_DATA` (the optional cell above), or the `VQCC_DATA` environment variable;
+# 2. `kagglehub.competition_download('google-verifiable-quantum-circuit-compilation')`;
+# 3. any copy mounted under `/kaggle/input`.
 
 # %%
 import glob
@@ -48,16 +62,45 @@ from pathlib import Path
 import numpy as np
 
 
+COMPETITION = 'google-verifiable-quantum-circuit-compilation'
+MARKER = Path('verifiers') / 'invsqrt' / 'verify_submission_invsqrt.py'
+
+
+def _data_root_under(folder) -> Path | None:
+    """The folder holding verifiers/ (the given folder or one below it), if any."""
+    folder = Path(folder).expanduser().resolve()
+    if (folder / MARKER).exists():
+        return folder
+    for hit in sorted(folder.glob('**/' + MARKER.as_posix())):
+        return hit.parents[2]
+    return None
+
+
 def find_data_root() -> Path:
-    candidates = []
-    if os.environ.get('VQCC_DATA'):
-        candidates.append(Path(os.environ['VQCC_DATA']))
-    candidates += [Path(p).parents[2] for p in glob.glob(
-        '/kaggle/input/**/verifiers/invsqrt/verify_submission_invsqrt.py', recursive=True)]
-    for c in candidates:
-        if (c / 'verifiers' / 'invsqrt' / 'verify_submission_invsqrt.py').exists():
-            return c
-    raise FileNotFoundError('Competition data not found. Attach it, or set VQCC_DATA.')
+    tried = []
+    for folder in (LOCAL_DATA, os.environ.get('VQCC_DATA')):
+        if folder:
+            tried.append(str(folder))
+            root = _data_root_under(folder) if Path(folder).expanduser().exists() else None
+            if root:
+                return root
+    try:
+        import kagglehub
+        path = kagglehub.competition_download(COMPETITION)
+        print('kagglehub:', path)
+        tried.append(f'kagglehub ({path})')
+        root = _data_root_under(path)
+        if root:
+            return root
+    except Exception as ex:
+        tried.append(f'kagglehub failed: {ex}')
+    if Path('/kaggle/input').exists():
+        tried.append('/kaggle/input')
+        root = _data_root_under('/kaggle/input')
+        if root:
+            return root
+    raise FileNotFoundError('Competition data not found. Tried: ' + '; '.join(tried) +
+                            '. On Kaggle, attach the competition data; locally, set LOCAL_DATA.')
 
 
 DATA = find_data_root()

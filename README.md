@@ -39,8 +39,18 @@ Estimated overall score with the current notebook: **1.958** (= 7.50^(1/3)).
 ## Submission notebook
 
 `notebooks/vqcc_submission.ipynb` builds every circuit from source, checks it and writes
-`submission.zip`. On Kaggle, attach the competition data and run all cells; the zip lands
-in `/kaggle/working`. Settings in the second cell:
+`submission.zip`.
+
+- **On Kaggle:** add the competition data to the notebook and run all cells. The data is
+  found with `kagglehub.competition_download('google-verifiable-quantum-circuit-compilation')`
+  (falling back to anything mounted under `/kaggle/input`). The zip lands in
+  `/kaggle/working`.
+- **Locally:** set `LOCAL_DATA = 'data/'` in the optional cell, pointing at the folder where
+  you unpacked the competition data (it can be the folder holding `verifiers/` or any folder
+  above it). Install kickmix first with `pip install kickmix`. The zip lands in
+  `output/` next to the notebook.
+
+Settings in the second cell:
 
 - `VERIFY`: `'none'`, `'quick'` (a few minutes) or `'full'` (official verifiers on
   everything, about 30–60 minutes).
@@ -55,8 +65,7 @@ cell markers). Edit that file, then regenerate:
 python tools/py_to_ipynb.py notebooks/vqcc_submission.py notebooks/vqcc_submission.ipynb
 ```
 
-To run it locally, point `VQCC_DATA` at a folder holding `verifiers/` and
-`sample_submission/`.
+The `VQCC_DATA` environment variable works as an alternative to `LOCAL_DATA`.
 
 ## Setup
 
