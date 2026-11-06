@@ -77,4 +77,21 @@ v1 rewrites GF(2¹²) as the tower GF(((2³)²)²). Basis changes are free CNOTs
 
 ## dfthcsos
 
-Baseline only so far (score 3,355,599,588).
+Baseline: brot 12, J 8, K 10, λ_eff 49.301, T 93,237, Q 730, **score 3,355,599,588**.
+
+Pipeline (notebook section 4): factorization → angle words (two-body rounded, one-body rows
+recomputed as eigenvectors) → circuits (largest J under the 128-qubit cap, reference lookup
+builder) → official verifier. On the baseline factorization at brot 12 it reproduces the
+sample submission byte for byte (all 10 circuits) and its exact score.
+
+Findings so far:
+
+| Experiment | Result |
+|---|---|
+| Plain rounding at brot 11 / 10 | error_2 25.0 / 40.0 mHa (limit 20) |
+| Prune 4 of 60 vectors per rank, no retraining | error_2 261 mHa |
+| J = 9 at brot 12 | needs 131 qubits with the standard lookup (cap 128) |
+| brot 11: freeze rounded vectors, refit weights, 300 epochs | error_2 21.2 mHa, λ_eff 50.04 (continuing) |
+
+Training runs at about 1.2 s per epoch on this 2-core CPU; Google's baseline used 50,000
+epochs, so structural changes (fewer vectors) need GPU training.
