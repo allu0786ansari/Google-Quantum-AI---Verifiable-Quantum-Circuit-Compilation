@@ -1,0 +1,13 @@
+# Competition data (download from Kaggle)
+verifiers/
+sample_submission/
+data/
+*.fcidump
+
+# Generated circuits (can be huge; dqi.kmb is ~800 MB)
+*.kmb
+*.kmx
+*.tmp.kmx
+
+__pycache__/
+*.pyc
