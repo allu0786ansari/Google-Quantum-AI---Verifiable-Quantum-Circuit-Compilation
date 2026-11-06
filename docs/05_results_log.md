@@ -91,7 +91,12 @@ Findings so far:
 | Plain rounding at brot 11 / 10 | error_2 25.0 / 40.0 mHa (limit 20) |
 | Prune 4 of 60 vectors per rank, no retraining | error_2 261 mHa |
 | J = 9 at brot 12 | needs 131 qubits with the standard lookup (cap 128) |
-| brot 11: freeze rounded vectors, refit weights, 300 epochs | error_2 21.2 mHa, λ_eff 50.04 (continuing) |
+| brot 11: freeze rounded vectors, refit weights, 300 epochs | error_2 21.2 mHa, λ_eff 50.04 |
+| same, +1,000 epochs (decaying rate) | plateau at **20.7 mHa** (limit 20), λ_eff 49.18, E_gap 3.9375 |
+
+Weights alone can't absorb the 11-bit rounding error; the next step is giving the refit more
+capacity (a few extra copies C, which add weights but no angles) or quantization-aware
+training of the vectors themselves.
 
 Training runs at about 1.2 s per epoch on this 2-core CPU; Google's baseline used 50,000
 epochs, so structural changes (fewer vectors) need GPU training.
