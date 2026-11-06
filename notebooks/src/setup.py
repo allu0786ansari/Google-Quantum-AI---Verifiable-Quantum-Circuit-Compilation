@@ -1,7 +1,7 @@
 # %%
 # ---- Settings ---------------------------------------------------------------
 VERIFY = 'quick'      # 'none' | 'quick' (minutes) | 'full' (official verifiers, ~30-60 min)
-USE_IMPROVED = {'invsqrt': True, 'dqi': False, 'dfthcsos': False}
+USE_IMPROVED = {'invsqrt': True, 'dqi': True, 'dfthcsos': False}
 
 # %% [markdown]
 # ### Optional: run locally
@@ -27,6 +27,7 @@ LOCAL_DATA = None     # e.g. 'data/'
 # %%
 import glob
 import io
+import itertools
 import json
 import math
 import os

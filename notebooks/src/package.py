@@ -6,7 +6,8 @@
 # the overall score is the geometric mean of the three ratios.
 
 # %%
-BASELINE_SCORE = {'invsqrt': 2076774.23, 'dqi': None, 'dfthcsos': 3355599588.3155375}
+# Baseline costs: invsqrt from the reference model's exact margin; dqi = R(0 failures) x 1893^2 x mean Toffolis.
+BASELINE_SCORE = {'invsqrt': 2076774.23, 'dqi': 24439397322564.6, 'dfthcsos': 3355599588.3155375}
 
 zip_path = OUT / 'submission.zip'
 with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
