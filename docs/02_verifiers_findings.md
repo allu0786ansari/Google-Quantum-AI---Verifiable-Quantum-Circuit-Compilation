@@ -4,8 +4,14 @@ From reading the competition's `verifiers/` code and running it locally. The ver
 is the authoritative spec.
 
 Local setup: `pip install kickmix` (1.0.0 on PyPI, cp313 wheel) runs all three verifiers.
-The Kaggle dataset ships its own `kickmix.so`; the organizers say the metric will move to
-the PyPI build.
+The Kaggle dataset ships its own `kickmix.so` (SHA-256 `c66b3216…005e`, a different binary);
+the organizers say the metric will move to the PyPI build.
+
+The two builds were checked against each other (6 Nov 2026) and behave identically:
+same `.kmb` bytes and SHA-256 for the invsqrt and dqi reference circuits (so the same test
+seeds), same qubit and Toffoli counts, same quick-check results for invsqrt and dqi, and the
+same dfthcsos sample score (3,355,599,588.3155375, submission hash `276d464f…`). Either
+build is fine for local work.
 
 ## Rules confirmed from code
 
