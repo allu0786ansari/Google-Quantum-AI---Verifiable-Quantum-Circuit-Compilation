@@ -10,6 +10,10 @@ verifiers.
   (arXiv:2610.23832), task contracts and main levers.
 - [docs/02_verifiers_findings.md](docs/02_verifiers_findings.md): what the verifier code
   actually checks and charges, plus baseline cost breakdowns.
+- [docs/03_project_proposal.md](docs/03_project_proposal.md): problem statement, what makes
+  each task hard, and the solution approach.
+- [docs/04_implementation_plan.md](docs/04_implementation_plan.md): workstreams, checks,
+  notebook design and schedule to the 20 Nov milestone.
 
 ## Baselines (all reproduced locally)
 
