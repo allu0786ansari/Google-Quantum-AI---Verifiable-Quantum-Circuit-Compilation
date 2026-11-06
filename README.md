@@ -58,12 +58,28 @@ Settings in the second cell:
 
 Any task whose checks fail falls back to its baseline circuit, so the zip is always valid.
 
-The notebook is generated from `notebooks/vqcc_submission.py` (plain Python with `# %%`
-cell markers). Edit that file, then regenerate:
+### How the notebooks are organized
+
+Each task's code lives in one source file, and all notebooks are generated from those:
+
+| Source (`notebooks/src/`) | Content |
+|---|---|
+| `setup.py` | settings, optional `LOCAL_DATA`, data lookup, output folder |
+| `invsqrt.py`, `dqi.py`, `dfthcsos.py` | one task each |
+| `intro.py`, `package.py` | title, and zip + report (merged notebook only) |
+
+| Generated notebook | Use |
+|---|---|
+| `vqcc_submission.ipynb` | all three tasks + `submission.zip`; **upload this one** |
+| `invsqrt.ipynb`, `dqi.ipynb`, `dfthcsos.ipynb` | one task each, for development and debugging |
+
+Edit only the sources, then regenerate every notebook:
 
 ```bash
-python tools/py_to_ipynb.py notebooks/vqcc_submission.py notebooks/vqcc_submission.ipynb
+python tools/build_notebooks.py
 ```
+
+To roll back one task, revert its source file and regenerate; the others are untouched.
 
 The `VQCC_DATA` environment variable works as an alternative to `LOCAL_DATA`.
 
