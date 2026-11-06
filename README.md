@@ -31,10 +31,10 @@ verifiers.
 | Task | Best score ratio | Notes |
 |---|---|---|
 | invsqrt | **7.50** | v4: 128 qubits, 1,914 Toffolis, score 276,794 (full verify PASS) |
-| dqi | **≈1.53** | v2: tower inverse + GF(4)-CRT multiply; 1,866 qubits, 3.84M Toffolis (quick check; full verify running) |
+| dqi | **1.534** | v2: tower inverse + GF(4)-CRT multiply; 1,866 qubits, 3.84M Toffolis, score 1.593×10¹³ (full verify PASS) |
 | dfthcsos | 1.00 | baseline |
 
-Estimated overall score with the current notebook: **≈2.26** (= (7.50 × 1.53)^(1/3)).
+Estimated overall score with the current notebook: **2.26** (= (7.50 × 1.534 × 1.00)^(1/3)).
 
 ## Submission notebook
 

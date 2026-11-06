@@ -49,8 +49,11 @@ Baseline: Q = 1,893, about 5,725,093 mean Toffolis, R = 1.1913 (0 failures in 10
 
 | Version | Change | Q | Toffolis | Est. score | Ratio | Check |
 |---|---|---|---|---|---|---|
-| v2 | + GF(4)-CRT multiply (42 terms) | 1,866 | 3,840,180 | ≈1.593×10¹³ | ≈1.53 | quick (1,024 shots, 0 failures); full: running |
+| **v2** | + GF(4)-CRT multiply (42 terms) | **1,866** | **3,840,178** | **1.5929×10¹³** | **1.534** | **full: PASS, 0 failures in 102,400** |
 | v1 | tower-field inverse, divide and multiply | 1,866 | 4,239,733 | 1.7586×10¹³ | 1.39 | quick (1,024 shots, 0 failures) |
+
+v2 full verification (`results/dqi_v2_full_verify.json`): PASS, 0 value and 0 phase errors in
+102,400 shots, R = 1.1913, circuit SHA-256 `a8d5ba71…cf45`. The notebook regenerates this file.
 
 v1 rewrites GF(2¹²) as the tower GF(((2³)²)²). Basis changes are free CNOTs.
 
