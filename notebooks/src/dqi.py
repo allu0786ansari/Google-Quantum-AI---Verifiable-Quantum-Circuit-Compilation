@@ -18,14 +18,18 @@
 # | Operation | Reference | Ours |
 # |---|---|---|
 # | inverse | 315 | **77** |
-# | divide (inverse + multiply) | 378 | **131** |
-# | controlled multiply | 75 | **66** |
+# | divide (inverse + multiply) | 378 | **119** |
+# | controlled multiply | 75 | **54** |
 #
-# GF(2^12) is rewritten as the tower GF(((2^3)^2)^2). Changing basis is a fixed
-# linear map, so it costs only CNOTs. In the tower:
+# Changing basis is a fixed linear map, so it costs only CNOTs. Two other views of
+# GF(2^12) make the arithmetic cheaper:
 #
-# - a multiply needs 54 AND terms (Karatsuba applied twice to a 6-term GF(8) multiply);
-# - an inverse is a norm in GF(64), an inverse in GF(8) and two GF(64) multiplies.
+# - **Inverse:** in the tower GF(((2^3)^2)^2), an inverse is a norm in GF(64), an
+#   inverse in GF(8) and two GF(64) multiplies.
+# - **Multiply:** as degree-6 polynomials over GF(4), a product is fixed by its
+#   values at the 4 points of GF(4), its leading coefficient, and its remainders
+#   mod 3 irreducible quadratics (Chinese remainder theorem). That is 14 GF(4)
+#   multiplies of 3 ANDs each: 42 AND terms instead of 63.
 #
 # Each AND term is one Toffoli. Every intermediate value is bilinear in registers
 # that are still alive, so it is cleared by X-basis measurement plus CZ fixes, for
@@ -159,6 +163,72 @@ TW_MUL4096 = tw_solve_formula(tw_karatsuba(6, [(u, v) for u, v, _ in TW_MUL64]),
 print(f'tower: mu={TW_MU_BITS}, nu={TW_NU_BITS}; multiply terms GF(8) {len(TW_MUL8)}, '
       f'GF(64) {len(TW_MUL64)}, GF(4096) {len(TW_MUL4096)}')
 
+
+# GF(4096) as polynomials of degree < 6 over GF(4) = {0, 1, w, w^2}, w = alpha^1365.
+# Coordinate bit 2i + c is the coefficient of w^c theta^i, with theta = alpha.
+_w = TW_F.pow(_a, 1365)
+_W4 = [0, 1, _w, _w ^ 1]
+_g4 = lambda a, b: _W4.index(TW_F.mul(_W4[a], _W4[b]))          # GF(4) multiply on 2-bit codes
+TW_T4 = np.array([tw_vec(TW_F.mul([1, _w][c], TW_F.pow(_a, i)), 12) for i in range(6) for c in range(2)],
+                 dtype=np.uint8).T                                # GF(4)-poly coords -> polynomial basis
+TW_T4I = tw_gf2_inv(TW_T4)
+tw_to4 = lambda x: tw_int(TW_T4I @ tw_vec(x, 12) % 2)
+tw_from4 = lambda c: tw_int(TW_T4 @ tw_vec(c, 12) % 2)
+
+
+def _crt_rows(fn, n_out):
+    """GF(2) matrix (n_out x 12) of a GF(4)-linear map given on coefficient i, code c."""
+    M = np.zeros((n_out, 12), dtype=np.uint8)
+    for bit in range(12):
+        i, c = divmod(bit, 2)
+        M[:, bit] = fn(i, 1 << c)
+    return M
+
+
+def _crt_eval(t):            # A(t) for t in GF(4): 2 bits
+    def f(i, c):
+        p = 1
+        for _ in range(i):
+            p = _g4(p, t)
+        v = _g4(c, p)
+        return [v & 1, v >> 1]
+    return _crt_rows(f, 2)
+
+
+def _crt_mod(q0, q1):        # A(x) mod (x^2 + q1 x + q0): 4 bits
+    def f(i, c):
+        r0, r1 = 1, 0
+        for _ in range(i):
+            r0, r1 = _g4(r1, q0), _g4(r1, q1) ^ r0
+        v0, v1 = _g4(c, r0), _g4(c, r1)
+        return [v0 & 1, v0 >> 1, v1 & 1, v1 >> 1]
+    return _crt_rows(f, 4)
+
+
+def _gf4_pairs(A, B):        # Karatsuba GF(4) product of two 2-bit linear images: 3 ANDs
+    return [(A[0], B[0]), (A[1], B[1]), ((A[0] + A[1]) % 2, (B[0] + B[1]) % 2)]
+
+
+_lead = np.zeros((2, 12), dtype=np.uint8); _lead[0, 10] = _lead[1, 11] = 1
+_irreducible = [(q0, q1) for q0 in range(1, 4) for q1 in range(4)
+                if all(_g4(t, t) ^ _g4(q1, t) ^ q0 for t in range(4))]
+_mul4 = lambda a, b: tw_to4(TW_F.mul(tw_from4(a), tw_from4(b)))
+for _qs in itertools.combinations(_irreducible, 3):
+    _pairs = []
+    for _t in range(4):
+        _pairs += _gf4_pairs(_crt_eval(_t), _crt_eval(_t))
+    _pairs += _gf4_pairs(_lead, _lead)
+    for _q in _qs:
+        P = _crt_mod(*_q)
+        _pairs += (_gf4_pairs(P[0:2], P[0:2]) + _gf4_pairs(P[2:4], P[2:4])
+                   + _gf4_pairs((P[0:2] + P[2:4]) % 2, (P[0:2] + P[2:4]) % 2))
+    try:
+        TW_MUL_CRT = tw_solve_formula(_pairs, 12, _mul4)
+        break
+    except ValueError:
+        continue
+print(f'GF(4)-CRT multiply: {len(TW_MUL_CRT)} AND terms (quadratics {_qs})')
+
 # %% [markdown]
 # ### Circuits
 #
@@ -187,6 +257,7 @@ def tw_cnot_ops(M):
 
 
 _TW_TO_TOWER, _TW_TO_POLY = tw_cnot_ops(TW_TI), tw_cnot_ops(TW_T)
+_TW_TO_4, _TW_FROM_4 = tw_cnot_ops(TW_T4I), tw_cnot_ops(TW_T4)
 
 
 def tw_apply_linear(b, qubits, ops):
@@ -352,35 +423,35 @@ def tw_init_div(b, num, den):
     R, s = tw_init_inverse(b, den)
     ratio = b.alloc_qubits(12)
     for reg in (num, R):
-        tw_apply_linear(b, reg, _TW_TO_TOWER)
-    tw_xor_bilinear_inplace(b, TW_MUL4096, num, R, ratio)
+        tw_apply_linear(b, reg, _TW_TO_4)
+    tw_xor_bilinear_inplace(b, TW_MUL_CRT, num, R, ratio)
     for reg in (ratio, R, num):
-        tw_apply_linear(b, reg, _TW_TO_POLY)
+        tw_apply_linear(b, reg, _TW_FROM_4)
     return ratio, km.array(list(R) + list(s))
 
 
 def tw_del_div(b, num, den, ratio, scaffold):
     R, s = scaffold[:12], scaffold[12:]
     for reg in (num, R, ratio):
-        tw_apply_linear(b, reg, _TW_TO_TOWER)
-    tw_del_bilinear(b, TW_MUL4096, num, R, ratio)
+        tw_apply_linear(b, reg, _TW_TO_4)
+    tw_del_bilinear(b, TW_MUL_CRT, num, R, ratio)
     for reg in (R, num):
-        tw_apply_linear(b, reg, _TW_TO_POLY)
+        tw_apply_linear(b, reg, _TW_FROM_4)
     tw_del_inverse(b, den, R, s)
 
 
 def tw_ixor_mul(b, lhs, rhs, target, control=True):
-    """target ^= control * lhs * rhs: 54 Toffolis, plus 12 when controlled."""
+    """target ^= control * lhs * rhs: 42 Toffolis, plus 12 when controlled."""
     src, tmp = lhs, None
     if control is not True:
         tmp = b.alloc_qubits(12)
         b.init_and(control, lhs, tmp)
         src = tmp
     for reg in (src, rhs, target):
-        tw_apply_linear(b, reg, _TW_TO_TOWER)
-    tw_xor_bilinear_inplace(b, TW_MUL4096, src, rhs, target)
+        tw_apply_linear(b, reg, _TW_TO_4)
+    tw_xor_bilinear_inplace(b, TW_MUL_CRT, src, rhs, target)
     for reg in (target, rhs, src):
-        tw_apply_linear(b, reg, _TW_TO_POLY)
+        tw_apply_linear(b, reg, _TW_FROM_4)
     if tmp is not None:
         b.del_and(control, lhs, tmp)
         b.free(tmp)
@@ -417,8 +488,8 @@ class TowerBuilder:
 # %% [markdown]
 # ### Unit checks, build and verify
 #
-# 1. **Formulas:** GF(8) and GF(64) multiplies on every pair; GF(4096) on 2,000
-#    random pairs, against kickmix's field.
+# 1. **Formulas:** GF(8) and GF(64) multiplies on every pair; both GF(4096)
+#    multiplies (tower and CRT) on 2,000 random pairs, against kickmix's field.
 # 2. **Circuits:** inverse on all 4,096 inputs, and divide and controlled multiply on
 #    8,192 random inputs each. Each must give the right value, restore its inputs,
 #    leave clean workspace and no phase.
@@ -442,7 +513,12 @@ def tw_check_formulas():
         for u, v, w in TW_MUL4096:
             if (u @ av) % 2 and (v @ bv) % 2:
                 out ^= w
-        assert tw_from_tower(tw_int(out)) == TW_F.mul(int(a), int(b_)), 'GF(4096) formula'
+        assert tw_from_tower(tw_int(out)) == TW_F.mul(int(a), int(b_)), 'GF(4096) tower formula'
+        av, bv, out = tw_vec(tw_to4(int(a)), 12), tw_vec(tw_to4(int(b_)), 12), np.zeros(12, dtype=np.uint8)
+        for u, v, w in TW_MUL_CRT:
+            if (u @ av) % 2 and (v @ bv) % 2:
+                out ^= w
+        assert tw_from4(tw_int(out)) == TW_F.mul(int(a), int(b_)), 'GF(4096) CRT formula'
 
 
 def tw_check_circuit(kind):
@@ -538,6 +614,8 @@ def run_dqi():
         result.update(verifier='full' if full else 'quick (1,024 shots)', verifier_status=r['status'],
                       failures=failures, mean_toffolis=r['toffoli_count'])
         result['score'] = r['score'] if full else dqi_score(V, circuit.num_qubits, r['toffoli_count'])
+    else:   # no simulation: estimate from the static count (the per-shot mean is ~100 lower)
+        result['score'] = dqi_score(load_dqi_verifier(), circuit.num_qubits, result['static_toffolis'])
     result['seconds'] = round(time.time() - t0, 1)
     return result
 

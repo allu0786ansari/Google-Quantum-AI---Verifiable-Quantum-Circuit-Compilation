@@ -49,15 +49,16 @@ Baseline: Q = 1,893, about 5,725,093 mean Toffolis, R = 1.1913 (0 failures in 10
 
 | Version | Change | Q | Toffolis | Est. score | Ratio | Check |
 |---|---|---|---|---|---|---|
-| v1 | tower-field inverse, divide and multiply | 1,866 | 4,239,733 | 1.7586×10¹³ | 1.39 | quick (1,024 shots, 0 failures); full: running |
+| v2 | + GF(4)-CRT multiply (42 terms) | 1,866 | 3,840,180 | ≈1.593×10¹³ | ≈1.53 | quick (1,024 shots, 0 failures); full: running |
+| v1 | tower-field inverse, divide and multiply | 1,866 | 4,239,733 | 1.7586×10¹³ | 1.39 | quick (1,024 shots, 0 failures) |
 
 v1 rewrites GF(2¹²) as the tower GF(((2³)²)²). Basis changes are free CNOTs.
 
 | Operation | Reference Toffolis | Tower Toffolis | Uses |
 |---|---|---|---|
 | inverse | 315 | 77 | Forney, 4,095 per shot |
-| divide | 378 | 131 | Euclid quotients, 444 per pass |
-| controlled multiply | 75 | 66 | Euclid sweep, 16,204 per pass |
+| divide | 378 | 131 (v1), **119** (v2) | Euclid quotients, 444 per pass |
+| controlled multiply | 75 | 66 (v1), **54** (v2) | Euclid sweep, 16,204 per pass |
 
 - Multiply formulas (6, 18 and 54 AND terms for GF(8), GF(64), GF(4096)) are found by
   solving a GF(2) linear system for the output wiring of Karatsuba product terms.
@@ -65,6 +66,9 @@ v1 rewrites GF(2¹²) as the tower GF(((2³)²)²). Basis changes are free CNOTs
   measurement plus classically conditioned CZs: zero Toffolis.
 - The multiply uses no scratch qubits (forms computed in place, fan-out through the
   output bits), which keeps the qubit peak at 1,866.
+- v2 multiplies with GF(2¹²) seen as degree-6 polynomials over GF(4): values at the 4
+  points of GF(4), the leading coefficient and remainders mod 3 irreducible quadratics fix
+  the product (CRT), so 14 GF(4) multiplies × 3 ANDs = 42 terms.
 - Google's reference decoder is imported unchanged; a builder wrapper redirects the four
   field operations, so the notebook carries only the new arithmetic.
 
