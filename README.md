@@ -20,7 +20,7 @@ verifiers.
 
 | Task | Cost formula | Baseline | Score |
 |---|---|---|---|
-| invsqrt | Q × (Toffolis + T/4) | Q 260, 7,735 Toffolis, 1 T, 37 rotations | ≈ 2.07×10⁶ |
+| invsqrt | Q × (Toffolis + T/4) | Q 260, 7,735 Toffolis, 1 T, 37 rotations | 2,076,774 |
 | dqi | R(ε₊) × Q² × T | Q 1,893, T 5,725,093/shot, R 1.19 | ≈ 2.44×10¹³ |
 | dfthcsos | λ_eff × T × Q | λ_eff 49.30, T 93,237, Q 730 | 3.356×10⁹ |
 
@@ -30,9 +30,11 @@ verifiers.
 
 | Task | Best score ratio | Notes |
 |---|---|---|
-| invsqrt | 1.00 | baseline |
+| invsqrt | **7.50** | v4: 128 qubits, 1,914 Toffolis, score 276,794 (full verify PASS) |
 | dqi | 1.00 | baseline |
 | dfthcsos | 1.00 | baseline |
+
+Estimated overall score with the current notebook: **1.958** (= 7.50^(1/3)).
 
 ## Submission notebook
 

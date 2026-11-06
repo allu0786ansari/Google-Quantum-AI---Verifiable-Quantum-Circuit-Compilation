@@ -10,7 +10,7 @@ Baseline: Q = 260, 7,735 Toffolis, 37 rotations, C = 7,987.6, **score 2,076,774*
 
 | Version | Design | Q | Mean Toffolis | Worst error / tol | Est. score | Ratio | Check |
 |---|---|---|---|---|---|---|---|
-| v4 (searched) | k=8, frac (27,19,9), δ bits (13,14), pf 27, qubit cap 128 | 128 | ≈1,914 | 0.957 | ≈275,100 | ≈7.55 | full: running |
+| **v4 (searched)** | k=8, frac (27,19,9), δ bits (13,14), pf 27, qubit cap 128 | **128** | **1,914.0** | 0.957 | **276,794** | **7.50** | **full: PASS** |
 | v3 (Booth) | k=8, frac (28,19,9), δ bits (13,14), pf 26 | 136 | 1,882 | 0.717 | 287,065 | 7.23 | quick |
 | v2 | radix-2, k=7, frac (29,20,11), pf 26 | 142 | 2,122 | 0.795 | 333,980 | 6.22 | quick |
 | v1 | radix-2, full-span subtraction | 156 | 2,478 | 0.887 | 421,437 | 4.93 | quick |
@@ -28,6 +28,10 @@ What each step changed:
 - **v3:** radix-4 Booth recoding of the multiplier. Half the rows means half the
   carry-propagating subtractions and half the truncation noise, which also allows narrower
   registers. Negative digits are free (complement, subtract, complement).
+
+v4 full verification (`results/invsqrt_v4_full_verify.json`): PASS on all 3,133,452 inputs ×
+64 shots (200,540,928 shots), 34 rotations at ε = 1.42×10⁻¹³, circuit SHA-256
+`972d538d…5622f`. The notebook regenerates this exact file.
 
 Design notes:
 
