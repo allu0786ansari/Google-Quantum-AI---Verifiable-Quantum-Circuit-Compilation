@@ -8,11 +8,11 @@ release 2. Each is checked with the official verifiers here:
 
 | Task | Component | Q | Toffolis | Score | Ratio | Check |
 |---|---|---|---|---|---|---|
-| invsqrt | 62-qubit circuit + five proved rewrites | 62 | 1,289.2 | ≈98,432 | ≈21.10 | quick; full running |
+| invsqrt | 62-qubit circuit + five proved rewrites (SHA `0ddf5dce…`) | 62 | 1,289.2 | 98,433 | **21.098** | **full: PASS** (200.5M shots, worst 0.99932 of tol) |
 | dqi | 891-qubit decoder (SHA `fc3ba816…`) | 891 | 396,921.5 | 3.7538×10¹¹ | **65.106** | **full: PASS, 0 failures** |
 | dfthcsos | C39 table + paired-product loaders | 428 | 15,585 | 3.1368×10⁸ | **10.698** | **full: PASS** (error_2 19.9997 mHa) |
 
-Estimated overall: **24.49**. The source bundle's build reproduced all 17 pinned output hashes.
+Overall from fully verified components: **24.49** (21.098 × 65.106 × 10.698)^(1/3). The source bundle's build reproduced all 17 pinned output hashes.
 Our own circuits (below) remain in the notebook as the fallback.
 
 Verified results for each task, newest first. "Quick" means the official verifier on a

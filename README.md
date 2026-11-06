@@ -28,20 +28,23 @@ verifiers.
 
 ## Status
 
-| Task | Best score ratio | Notes |
-|---|---|---|
-| invsqrt | **7.50** | v4: 128 qubits, 1,914 Toffolis, score 276,794 (full verify PASS) |
-| dqi | **1.534** | v2: tower inverse + GF(4)-CRT multiply; 1,866 qubits, 3.84M Toffolis, score 1.593×10¹³ (full verify PASS) |
-| dfthcsos | 1.00 | baseline |
+| Task | Best ratio | Source | Notes |
+|---|---|---|---|
+| invsqrt | **21.10** | public frontier (credited) | 62 qubits, 1,289 Toffolis; full verify PASS. Ours: 7.50 |
+| dqi | **65.11** | public frontier (credited) | 891 qubits, 396,922 Toffolis; full verify PASS, 0 failures. Ours: 1.53 |
+| dfthcsos | **10.70** | public frontier (credited) | C39 table, 428 qubits, λ_eff 47.03; full verify PASS. Ours: 1.00 |
 
-Estimated overall score with the current notebook: **2.26** (= (7.50 × 1.534 × 1.00)^(1/3)).
+Overall from fully verified components: **24.49**. The notebook builds the frontier from
+ahoirg's *QCC Reproducible Circuit Assets* and falls back to our own circuits, then the baseline.
 
 ## Submission notebook
 
 `notebooks/vqcc_submission.ipynb` builds every circuit from source, checks it and writes
 `submission.zip`.
 
-- **On Kaggle:** add the competition data to the notebook and run all cells. The data is
+- **On Kaggle:** add the competition data **and ahoirg's
+  [QCC Reproducible Circuit Assets](https://www.kaggle.com/datasets/ahoirg/qcc-reproducible-circuit-assets)**
+  to the notebook and run all cells. The data is
   found with `kagglehub.competition_download('google-verifiable-quantum-circuit-compilation')`
   (falling back to anything mounted under `/kaggle/input`). The zip lands in
   `/kaggle/working`.
