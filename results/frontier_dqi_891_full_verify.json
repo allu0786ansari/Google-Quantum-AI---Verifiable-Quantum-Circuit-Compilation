@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "score": 375376238975.30585,
+  "m": 4095,
+  "n": 70,
+  "degree": 12,
+  "r": 2016,
+  "verified_shots": 102400,
+  "value_errors": 0,
+  "phase_errors": 0,
+  "empirical_error_rate": 0.0,
+  "effective_error_rate": 0.0008660587301657926,
+  "log2_delta": -128.0,
+  "repetition_factor": 1.1912604648115832,
+  "mean_error_weight": 31.046737331746634,
+  "toffoli_count": 396921.516328125,
+  "max_toffoli_count": 397194,
+  "reaction_depth": -1,
+  "num_ops": 58336043,
+  "num_qubits": 891,
+  "num_bits": 101621,
+  "circuit_sha256": "fc3ba81614e1016f7fbc6c58bc229243fc0c26aa5de601caef7d280e7d14dad9"
+}

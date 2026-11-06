@@ -449,14 +449,35 @@ def use_baseline_invsqrt():
         build_nr_circuit(10).to_file(str(SUB / 'invsqrt.kmb'), format='kmb')
 
 
-if USE_IMPROVED['invsqrt']:
+def run_frontier_invsqrt():
+    from invsqrt import verify_submission_invsqrt as V
+    t0 = time.time()
+    shutil.copy(FRONTIER['invsqrt'], SUB / 'invsqrt.kmb')
+    c = km.Circuit.from_file(str(SUB / 'invsqrt.kmb'))
+    if VERIFY == 'none':
+        return dict(num_qubits=c.num_qubits, static_toffolis=c.operation_statistics().num_toffoli_like,
+                    verifier='none (hash-pinned build)', seconds=round(time.time() - t0, 1))
+    full = VERIFY == 'full'
+    spec = V.ProblemSpecInvSqrt.for_n_p(10) if full else V.ProblemSpecInvSqrt(
+        width=22, max_x=65536, beta=Fraction(1), precision_bits=24, shots_per_x=4, system_qubits=0)
+    r = V.verify(c, spec)
+    return dict(num_qubits=c.num_qubits, mean_toffolis=r['toffoli_count'], rotations=r['rotation_count'],
+                verifier='full' if full else 'quick (x <= 65,536; score estimate)', verifier_status=r['status'],
+                score=r['score'], seconds=round(time.time() - t0, 1))
+
+
+REPORT['invsqrt'] = None
+if USE_FRONTIER['invsqrt'] and 'invsqrt' in FRONTIER:
     try:
-        REPORT['invsqrt'] = dict(version='improved', **run_invsqrt())
+        REPORT['invsqrt'] = dict(version='frontier', **run_frontier_invsqrt())
     except Exception as ex:
-        print('invsqrt: improved circuit rejected, using baseline:', ex)
-        use_baseline_invsqrt()
-        REPORT['invsqrt'] = dict(version='baseline (fallback)', error=str(ex))
-else:
+        print('invsqrt: frontier circuit rejected:', ex)
+if REPORT['invsqrt'] is None and USE_IMPROVED['invsqrt']:
+    try:
+        REPORT['invsqrt'] = dict(version='ours', **run_invsqrt())
+    except Exception as ex:
+        print('invsqrt: our circuit rejected:', ex)
+if REPORT['invsqrt'] is None:
     use_baseline_invsqrt()
     REPORT['invsqrt'] = dict(version='baseline')
 print(json.dumps(REPORT['invsqrt'], indent=2))

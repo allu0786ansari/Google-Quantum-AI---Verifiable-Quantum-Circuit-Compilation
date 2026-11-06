@@ -10,11 +10,15 @@
 # dfthcsos/angle_k_0.kmb ... angle_k_<K-1>.kmb, submission.npz
 # ```
 #
-# | Task | Version in this notebook |
-# |---|---|
-# | invsqrt | **Improved**: piecewise quadratic replaces the Newton step (section 2) |
-# | dqi | Baseline reference decoder (improvement in progress) |
-# | dfthcsos | Baseline sample submission (improvement in progress) |
+# For each task the notebook tries, in order, and keeps the first that passes the
+# official verifier:
 #
-# Every task falls back to its baseline circuit if a check fails, so the zip is
-# always valid. Settings are in the next cell.
+# 1. **the public frontier** (section 1b): the strongest public circuits, built by
+#    many Kaggle participants under Apache-2.0 and fully credited;
+# 2. **our own circuits** (sections 2-4): invsqrt with a piecewise quadratic and
+#    Booth multipliers (7.5x), dqi with tower-field arithmetic (1.53x), and a
+#    chemistry pipeline;
+# 3. **Google's baseline**, so the zip is always valid.
+#
+# Attach the competition data and ahoirg's *QCC Reproducible Circuit Assets*
+# dataset. Settings are in the next cell.

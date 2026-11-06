@@ -629,14 +629,40 @@ def use_baseline_dqi():
         build_reference_circuit(4095, 70, 12).to_file(str(SUB / 'dqi.kmb'), format='kmb')
 
 
-if USE_IMPROVED['dqi']:
+def run_frontier_dqi():
+    t0 = time.time()
+    shutil.copy(FRONTIER['dqi'], SUB / 'dqi.kmb')
+    V = load_dqi_verifier()
+    full = VERIFY == 'full'
+    c = km.Circuit.from_file(str(SUB / 'dqi.kmb'))
+    if VERIFY == 'none':
+        return dict(num_qubits=c.num_qubits, static_toffolis=c.operation_statistics().num_toffoli_like,
+                    verifier='none (hash-pinned build)',
+                    score=dqi_score(V, c.num_qubits, c.operation_statistics().num_toffoli_like),
+                    seconds=round(time.time() - t0, 1))
+    spec = V.ProblemSpecDQI.benchmark_instance(num_shots=102400 if full else 1024)
+    r = V.verify(c, spec, max_workers=os.cpu_count() if full else 1, log2_delta=-128.0 if full else -1.0)
+    failures = r['value_errors'] + r['phase_errors']
+    if failures and not full:
+        raise AssertionError(f'{failures} failed shots in the quick check')
+    return dict(num_qubits=c.num_qubits, mean_toffolis=r['toffoli_count'], failures=failures,
+                verifier='full' if full else 'quick (1,024 shots)', verifier_status=r['status'],
+                score=r['score'] if full else dqi_score(V, c.num_qubits, r['toffoli_count']),
+                seconds=round(time.time() - t0, 1))
+
+
+REPORT['dqi'] = None
+if USE_FRONTIER['dqi'] and 'dqi' in FRONTIER:
     try:
-        REPORT['dqi'] = dict(version='improved', **run_dqi())
+        REPORT['dqi'] = dict(version='frontier', **run_frontier_dqi())
     except Exception as ex:
-        print('dqi: improved circuit rejected, using baseline:', ex)
-        use_baseline_dqi()
-        REPORT['dqi'] = dict(version='baseline (fallback)', error=str(ex))
-else:
+        print('dqi: frontier circuit rejected:', ex)
+if REPORT['dqi'] is None and USE_IMPROVED['dqi']:
+    try:
+        REPORT['dqi'] = dict(version='ours', **run_dqi())
+    except Exception as ex:
+        print('dqi: our circuit rejected:', ex)
+if REPORT['dqi'] is None:
     use_baseline_dqi()
     REPORT['dqi'] = dict(version='baseline')
 print(json.dumps(REPORT['dqi'], indent=2))

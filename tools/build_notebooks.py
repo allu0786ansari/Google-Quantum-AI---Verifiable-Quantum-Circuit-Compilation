@@ -6,6 +6,7 @@ Sources (plain Python, '# %%' code cells and '# %% [markdown]' text cells):
 
     notebooks/src/intro.py      title of the merged notebook
     notebooks/src/setup.py      settings, optional LOCAL_DATA, data lookup, output folder
+    notebooks/src/frontier.py   public frontier components (credited), built from ahoirg's assets
     notebooks/src/invsqrt.py    task 1
     notebooks/src/dqi.py        task 2
     notebooks/src/dfthcsos.py   task 3
@@ -64,7 +65,7 @@ def write(path, parts):
 
 
 write(ROOT / 'vqcc_submission.ipynb',
-      [src('intro'), src('setup'), *(src(t) for t in TASKS), src('package')])
+      [src('intro'), src('setup'), src('frontier'), *(src(t) for t in TASKS), src('package')])
 
 for task, title in TASKS.items():
     intro = (f'# %% [markdown]\n# # {title}\n#\n'
@@ -76,4 +77,4 @@ for task, title in TASKS.items():
                "for f in sorted(SUB.rglob('*')):\n"
                '    if f.is_file():\n'
                "        print(f'{f.relative_to(SUB)}  {f.stat().st_size / 1e6:.1f} MB')\n")
-    write(ROOT / f'{task}.ipynb', [intro, src('setup'), src(task), summary])
+    write(ROOT / f'{task}.ipynb', [intro, src('setup'), src('frontier'), src(task), summary])

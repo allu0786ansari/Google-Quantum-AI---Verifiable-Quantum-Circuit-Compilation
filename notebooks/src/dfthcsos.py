@@ -182,14 +182,34 @@ def use_baseline_dfthcsos():
         shutil.copy(f, out / f.name)
 
 
-if USE_IMPROVED['dfthcsos']:
+def run_frontier_dfthcsos():
+    from dfthcsos.verify import verify as verify_dfthcsos
+    t0 = time.time()
+    out = SUB / 'dfthcsos'
+    for f in out.glob('*'):
+        f.unlink()
+    for f in sorted(Path(FRONTIER['dfthcsos']).iterdir()):
+        shutil.copy(f, out / f.name)
+    r = verify_dfthcsos(str(out))          # raises if any gate fails
+    m = r['metrics']
+    return dict(brot=r['brot'], batch_size=r['batch_size'], circuits=r['num_circuits'], score=r['score'],
+                lambda_eff=r['lambda_eff'], toffolis=r['toffoli_count'], qubits=r['num_qubits'],
+                error_1_mHa=round(1e3 * m['error_1'], 4), error_2_mHa=round(1e3 * m['error_2'], 4),
+                seconds=round(time.time() - t0, 1))
+
+
+REPORT['dfthcsos'] = None
+if USE_FRONTIER['dfthcsos'] and 'dfthcsos' in FRONTIER:
     try:
-        REPORT['dfthcsos'] = dict(version='improved', **run_dfthcsos())
+        REPORT['dfthcsos'] = dict(version='frontier', **run_frontier_dfthcsos())
     except Exception as ex:
-        print('dfthcsos: improved submission rejected, using baseline:', ex)
-        use_baseline_dfthcsos()
-        REPORT['dfthcsos'] = dict(version='baseline (fallback)', error=str(ex))
-else:
+        print('dfthcsos: frontier submission rejected:', ex)
+if REPORT['dfthcsos'] is None and USE_IMPROVED['dfthcsos']:
+    try:
+        REPORT['dfthcsos'] = dict(version='ours', **run_dfthcsos())
+    except Exception as ex:
+        print('dfthcsos: our submission rejected:', ex)
+if REPORT['dfthcsos'] is None:
     use_baseline_dfthcsos()
     REPORT['dfthcsos'] = dict(version='baseline')
     if VERIFY in ('quick', 'full'):

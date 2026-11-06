@@ -1,5 +1,20 @@
 # Results log
 
+## Public frontier assembly (6 Nov 2026, evening)
+
+After researching the leaderboard (top ≈ 25), we build on the strongest public circuits
+(Apache-2.0, credited in the notebook), from ahoirg's *QCC Reproducible Circuit Assets*
+release 2. Each is checked with the official verifiers here:
+
+| Task | Component | Q | Toffolis | Score | Ratio | Check |
+|---|---|---|---|---|---|---|
+| invsqrt | 62-qubit circuit + five proved rewrites | 62 | 1,289.2 | ≈98,432 | ≈21.10 | quick; full running |
+| dqi | 891-qubit decoder (SHA `fc3ba816…`) | 891 | 396,921.5 | 3.7538×10¹¹ | **65.106** | **full: PASS, 0 failures** |
+| dfthcsos | C39 table + paired-product loaders | 428 | 15,585 | 3.1368×10⁸ | **10.698** | **full: PASS** (error_2 19.9997 mHa) |
+
+Estimated overall: **24.49**. The source bundle's build reproduced all 17 pinned output hashes.
+Our own circuits (below) remain in the notebook as the fallback.
+
 Verified results for each task, newest first. "Quick" means the official verifier on a
 subset (invsqrt: x ≤ 65,536, 4 shots each); "full" means exactly as the leaderboard runs it.
 

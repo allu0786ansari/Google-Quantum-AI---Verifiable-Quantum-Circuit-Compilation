@@ -17,7 +17,7 @@ with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED, compressle
 with zipfile.ZipFile(zip_path) as z:
     names = set(z.namelist())
 need = {'invsqrt.kmb', 'dqi.kmb', 'dfthcsos/submission.npz'}
-angles = sorted(n for n in names if n.startswith('dfthcsos/angle_k_'))
+angles = sorted((n for n in names if n.startswith('dfthcsos/angle_k_')), key=lambda n: int(n.split('_')[-1].split('.')[0]))
 assert need <= names, f'missing {need - names}'
 assert angles == [f'dfthcsos/angle_k_{i}.kmb' for i in range(len(angles))], 'angle files not contiguous'
 
