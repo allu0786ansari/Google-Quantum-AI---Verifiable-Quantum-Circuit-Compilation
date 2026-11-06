@@ -14,6 +14,7 @@ verifiers.
   each task hard, and the solution approach.
 - [docs/04_implementation_plan.md](docs/04_implementation_plan.md): workstreams, checks,
   notebook design and schedule to the 20 Nov milestone.
+- [docs/05_results_log.md](docs/05_results_log.md): verified results for each version.
 
 ## Baselines (all reproduced locally)
 
@@ -32,6 +33,28 @@ verifiers.
 | invsqrt | 1.00 | baseline |
 | dqi | 1.00 | baseline |
 | dfthcsos | 1.00 | baseline |
+
+## Submission notebook
+
+`notebooks/vqcc_submission.ipynb` builds every circuit from source, checks it and writes
+`submission.zip`. On Kaggle, attach the competition data and run all cells; the zip lands
+in `/kaggle/working`. Settings in the second cell:
+
+- `VERIFY`: `'none'`, `'quick'` (a few minutes) or `'full'` (official verifiers on
+  everything, about 30–60 minutes).
+- `USE_IMPROVED`: per-task switch between our circuit and the baseline.
+
+Any task whose checks fail falls back to its baseline circuit, so the zip is always valid.
+
+The notebook is generated from `notebooks/vqcc_submission.py` (plain Python with `# %%`
+cell markers). Edit that file, then regenerate:
+
+```bash
+python tools/py_to_ipynb.py notebooks/vqcc_submission.py notebooks/vqcc_submission.ipynb
+```
+
+To run it locally, point `VQCC_DATA` at a folder holding `verifiers/` and
+`sample_submission/`.
 
 ## Setup
 

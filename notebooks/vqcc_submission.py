@@ -104,9 +104,15 @@ print('output:', SUB)
 #    (address = parity of t and the top k bits of M). kickmix's lookup costs
 #    about one Toffoli per entry and clearing it costs about a tenth of that.
 # 3. *Evaluate* y = c0 - (c1 - c2*d)*d with truncated fixed-point multipliers,
-#    where d is the rest of M's bits. Each multiplier row is subtracted only
-#    from the low bits that can change, plus a borrow qubit, followed by one
-#    controlled decrement of the high bits.
+#    where d is the rest of M's bits.
+#    - The multipliers use radix-4 Booth recoding: each row handles two bits of d
+#      with a digit in {-2, ..., 2}, so there are half as many carry-propagating
+#      subtractions and half as much truncation noise. A negative digit costs
+#      nothing extra: complement the target with CNOTs, subtract, complement back.
+#    - Each row is subtracted only from the low bits that can change, plus a
+#      borrow qubit, followed by one controlled decrement of the high bits.
+#    - Row bits are cleared by X-basis measurement with conditioned CZ fixes, so
+#      clearing them costs no Toffolis.
 # 4. *Shift* the phased part of y left by sh with kickmix's barrel shifter, apply
 #    one Z_POW per bit, then undo steps 4 to 1.
 #
@@ -149,18 +155,47 @@ def inv_inputs():
     return xs, lz, xn, e
 
 
-def inv_evaluate(d, table, xn, e):
-    """Exact fixed-point Horner evaluation; returns y in units of 2^-frac[0]."""
+def inv_booth_digits(d, j):
+    """Radix-4 Booth digits of step j: (lo, mid, hi, m) with x_norm bit indices
+    (None = constant 0); digit = -2*hi + mid + lo, weight 2^-m."""
+    used = sorted(i for i, _ in inv_rows(d, j))
+    n = len(used)
+    bit = lambda t: used[t] if 0 <= t < n else None
+    m0 = 21 - used[0]
+    out = []
+    for jj in range((n + 2) // 2):
+        lo, mid, hi = bit(2 * jj - 1), bit(2 * jj), bit(2 * jj + 1)
+        if (lo, mid, hi) != (None, None, None):
+            out.append((lo, mid, hi, m0 - 2 * jj))
+    return out
+
+
+def _inv_shift(r, s):
+    return (r >> s) if s >= 0 else (r << -s)
+
+
+def inv_steps(d, table, xn, e):
+    """Exact fixed-point Horner evaluation. Yields (j, c_j, result_j) per step."""
     addr = (e << d.k) | ((xn >> (INV_WIDTH - 1 - d.k)) & ((1 << d.k) - 1))
     r = table[addr, d.degree].copy()
     for j in range(d.degree - 1, -1, -1):
         acc = table[addr, j].copy()
         fin, fout = d.frac[j + 1], d.frac[j]
-        for i, m in inv_rows(d, j):
+        for lo, mid, hi, m in inv_booth_digits(d, j):
+            g = lambda i: ((xn >> i) & 1) if i is not None else 0
+            dg = -2 * g(hi) + g(mid) + g(lo)
             s = m + fin - fout
-            acc -= ((xn >> i) & 1) * ((r >> s) if s >= 0 else (r << -s))
+            row = np.where(np.abs(dg) == 2, _inv_shift(r, s - 1), np.where(np.abs(dg) == 1, _inv_shift(r, s), 0))
+            acc -= np.sign(dg) * row
+        yield j, table[addr, j], acc
         r = acc
-    return r
+
+
+def inv_evaluate(d, table, xn, e):
+    """Returns y (the final Horner result) in units of 2^-frac[0]."""
+    for j, c, acc in inv_steps(d, table, xn, e):
+        pass
+    return acc
 
 
 def inv_phase_turns(d, y, lz):
@@ -209,19 +244,13 @@ def inv_fit(d, refine_iters=3):
 
 
 def inv_low_widths(d, table, xn, e):
-    """Bits needed for the total amount each Horner step subtracts (over all x)."""
-    addr = (e << d.k) | ((xn >> (INV_WIDTH - 1 - d.k)) & ((1 << d.k) - 1))
-    r = table[addr, d.degree].copy()
+    """Bits needed for the total amount P each Horner step subtracts (over all x).
+    The borrow trick needs 0 <= P < 2^w and a non-negative result."""
     out = [0] * d.degree
-    for j in range(d.degree - 1, -1, -1):
-        acc = table[addr, j].copy()
-        fin, fout = d.frac[j + 1], d.frac[j]
-        for i, m in inv_rows(d, j):
-            s = m + fin - fout
-            acc -= ((xn >> i) & 1) * ((r >> s) if s >= 0 else (r << -s))
-        assert (acc >= 0).all(), 'Horner register underflow'
-        out[j] = int((table[addr, j] - acc).max()).bit_length()
-        r = acc
+    for j, c, acc in inv_steps(d, table, xn, e):
+        P = c - acc
+        assert P.min() >= 0 and (acc >= 0).all(), 'Horner range check failed'
+        out[j] = int(P.max()).bit_length()
     return out
 
 # %% [markdown]
@@ -282,17 +311,70 @@ def inv_normalize(b, x, flags, inverse):
                 _inv_mbu_clear_flag(b, x, L, f)
 
 
-def _inv_add_row(b, inverse, control, terms, target, scratch):
-    """target -= control * sum(2^idx * q) (or += when inverse); ANDs uncomputed by measurement."""
-    sources = km.array([q for q, _ in terms])
-    products = km.array([scratch[i] for _, i in terms])
-    low = min(i for _, i in terms)
-    b.init_and(control, sources, products)
-    if inverse:
-        b.iadd(scratch[low:len(target)], target=target[low:])
-    else:
-        b.isub(scratch[low:len(target)], target=target[low:])
-    b.del_and(control, sources, products)
+def _inv_booth_row(b, inverse, x, lo, mid, hi, r, s, tgt, scratch, wtop):
+    """tgt -= digit * (r >> s) (or += when inverse), digit = -2*hi + mid + lo from x bits.
+
+    Row bit p = one * r[p+s] xor two * r[p+s-1], where one = mid xor lo and
+    two = (not one) and (hi xor mid). Bits at or above len(tgt) are dropped:
+    tgt is mod-2^len(tgt) arithmetic and the final value is known to fit.
+    """
+    g = lambda i: x[i] if i is not None else None
+    qlo, qmid, qhi = g(lo), g(mid), g(hi)
+    R = lambda t: r[t] if 0 <= t < len(r) else None
+    o, t = b.alloc_qubits(2)
+    for q in (qmid, qlo):                       # o = one
+        if q is not None:
+            b.cx(q, o)
+    both = qhi is not None and qmid is not None
+    if both:
+        b.cx(qmid, qhi)                         # hi temporarily holds hi xor mid
+    hm = qhi if qhi is not None else qmid
+    has_two = hm is not None
+    if has_two:                                 # t = two
+        b.x(o); b.init_and(o, hm, t); b.x(o)
+    pos1 = [p for p in range(wtop + 1) if R(p + s) is not None]
+    pos2 = [p for p in range(wtop + 1) if R(p + s - 1) is not None] if has_two else []
+    positions = sorted(set(pos1) | set(pos2))
+    if positions:
+        for p in pos1:
+            b.init_and(o, R(p + s), scratch[p])
+        for p in pos2:
+            if p in pos1:
+                b.ccx(t, R(p + s - 1), scratch[p])
+            else:
+                b.init_and(t, R(p + s - 1), scratch[p])
+        if both:
+            b.cx(qmid, qhi)                     # restore hi: it is the digit's sign
+        span = tgt[positions[0]:]
+        if qhi is not None:
+            b.cx(qhi, span)                     # negative digit: ~(~t - v) = t + v
+        if inverse:
+            b.iadd(scratch[positions[0]:len(tgt)], target=span)
+        else:
+            b.isub(scratch[positions[0]:len(tgt)], target=span)
+        if qhi is not None:
+            b.cx(qhi, span)
+        if both:
+            b.cx(qmid, qhi)
+        mb = b.alloc_bits(len(positions))       # clear row bits by measurement
+        for p, m in zip(positions, mb):
+            b.hmr(scratch[p], m)
+            b.push_condition(m)
+            if p in pos1:
+                b.cz(o, R(p + s))
+            if p in pos2:
+                b.cz(t, R(p + s - 1))
+            b.pop_condition()
+        b.bit_store(mb, False)
+        b.free(mb)
+    if has_two:
+        b.x(o); b.del_and(o, hm, t); b.x(o)
+    if both:
+        b.cx(qmid, qhi)
+    for q in (qlo, qmid):
+        if q is not None:
+            b.cx(q, o)
+    b.free(km.array([o, t]))
 
 
 def inv_horner(b, d, x, regs, scratch, borrows, low_widths, inverse):
@@ -304,18 +386,17 @@ def inv_horner(b, d, x, regs, scratch, borrows, low_widths, inverse):
         with b.mark(f'horner_{j}'):
             if inverse:
                 b.iadd(1, target=acc[wl:], control=borrows[j])
-            rows = inv_rows(d, j)
-            for i, m in (reversed(rows) if inverse else rows):
-                terms = [(r[fin - bb], fout - bb - m) for bb in range(1, fin + 1) if bb + m <= fout]
-                if terms:
-                    assert max(t for _, t in terms) < wl
-                    _inv_add_row(b, inverse, x[i], terms, tgt, scratch)
+            digits = inv_booth_digits(d, j)
+            for lo, mid, hi, m in (reversed(digits) if inverse else digits):
+                _inv_booth_row(b, inverse, x, lo, mid, hi, r, m + fin - fout, tgt, scratch, wl)
             if not inverse:
                 b.isub(1, target=acc[wl:], control=borrows[j])
 
 
-def inv_build(d, table, low_widths, compute_only=False):
+def inv_build(d, table, low_widths, compute_only=False, max_qubits=None):
     b = km.CircuitBuilder()
+    if max_qubits:
+        b.set_max_qubits(max_qubits)   # kickmix adders then use fewer carry qubits
     x = b.create_quantum_register(INV_WIDTH, name='x')
     alloc = (lambda n, name: b.create_quantum_register(n, name=name)) if compute_only else (lambda n, name: b.alloc_qubits(n))
     flags = alloc(len(INV_STAGES), 'flags')          # flags[4] (shift 1) is the parity of t
@@ -381,7 +462,9 @@ def inv_build(d, table, low_widths, compute_only=False):
 #    `full`: every input, 64 shots each, exactly as the leaderboard runs it.
 
 # %%
-INV_DESIGN = InvDesign(k=7, frac=(29, 20, 11), dbits=(14, 16), pf=26)
+# Found by a local search over widths, scored by the real circuit's qubits x Toffolis.
+INV_DESIGN = InvDesign(k=8, frac=(27, 19, 9), dbits=(13, 14), pf=27)
+INV_MAX_QUBITS = 128
 
 
 def inv_check_circuit_matches_model(d, table, y, low_widths):
@@ -417,7 +500,7 @@ def run_invsqrt():
     print(f"model: worst error {stats['worst_ratio']:.3f} x tolerance on all {INV_MAX_X:,} inputs")
     if stats['worst_ratio'] > 0.97:
         raise AssertionError('model error too close to tolerance')
-    circuit = inv_build(INV_DESIGN, table, stats['low_widths'])
+    circuit = inv_build(INV_DESIGN, table, stats['low_widths'], max_qubits=INV_MAX_QUBITS)
     if not inv_check_circuit_matches_model(INV_DESIGN, table, y, stats['low_widths']):
         raise AssertionError('circuit output differs from the model')
     print('circuit matches model bit for bit on 4,096 sample inputs')
