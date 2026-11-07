@@ -1,0 +1,13 @@
+Training U/V (8, 143, 76) and W (8, 143, 44) with generators None for 24000 epochs with DF-THC-SOS.
+B@epoch 0: ε_fro=4540.5mHa, λ_eff=716.49Ha, Λ=1166.18Ha (Λ_1=283.847, Λ_2=882.3), cost = 4602.1mHa, E_SOS: -22386.334Ha, gap: 246.0605Ha, ms/it: 2.99
+B@epoch 1200: ε_fro=147.2mHa, λ_eff=160.90Ha, Λ=1130.40Ha (Λ_1=17.452, Λ_2=1113.0), cost = 153.3mHa, E_SOS: -22151.783Ha, gap: 11.5098Ha, ms/it: 165.69
+  epoch 2400: ε_fro=127.9mHa, λ_eff=742.53Ha, Λ=1203.95Ha (Λ_1=267.174, Λ_2=936.8), cost = 192.1mHa, E_SOS: -22396.520Ha, gap: 256.2461Ha, ms/it: 133.89
+B@epoch 3600: ε_fro=104.3mHa, λ_eff=459.62Ha, Λ=1005.22Ha (Λ_1=116.612, Λ_2=888.6), cost = 140.3mHa, E_SOS: -22251.504Ha, gap: 111.2305Ha, ms/it: 130.27
+B@epoch 4800: ε_fro=88.5mHa, λ_eff=181.45Ha, Λ=903.22Ha (Λ_1=22.423, Λ_2=880.8), cost = 96.7mHa, E_SOS: -22158.688Ha, gap: 18.4141Ha, ms/it: 125.87
+B@epoch 6000: ε_fro=80.0mHa, λ_eff=102.11Ha, Λ=883.38Ha (Λ_1=13.979, Λ_2=869.4), cost = 80.2mHa, E_SOS: -22146.195Ha, gap: 5.9219Ha, ms/it: 127.78
+  epoch 7200: ε_fro=83.5mHa, λ_eff=661.29Ha, Λ=1058.97Ha (Λ_1=242.868, Λ_2=816.1), cost = 139.6mHa, E_SOS: -22372.135Ha, gap: 231.8613Ha, ms/it: 136.21
+  epoch 8400: ε_fro=76.1mHa, λ_eff=496.05Ha, Λ=934.27Ha (Λ_1=151.956, Λ_2=782.3), cost = 115.7mHa, E_SOS: -22282.838Ha, gap: 142.5645Ha, ms/it: 133.07
+  epoch 9600: ε_fro=72.1mHa, λ_eff=245.22Ha, Λ=830.63Ha (Λ_1=38.265, Λ_2=792.4), cost = 86.6mHa, E_SOS: -22177.295Ha, gap: 37.0215Ha, ms/it: 130.77
+B@epoch 10800: ε_fro=67.2mHa, λ_eff=118.34Ha, Λ=790.72Ha (Λ_1=15.539, Λ_2=775.2), cost = 69.0mHa, E_SOS: -22149.180Ha, gap: 8.9062Ha, ms/it: 133.06
+B@epoch 12000: ε_fro=64.3mHa, λ_eff=87.93Ha, Λ=783.62Ha (Λ_1=13.604, Λ_2=770.0), cost = 63.1mHa, E_SOS: -22145.223Ha, gap: 4.9492Ha, ms/it: 136.46
+  epoch 13200: ε_fro=66.3mHa, λ_eff=404.35Ha, Λ=867.77Ha (Λ_1=109.372, Λ_2=758.4), cost = 96.7mHa, E_SOS: -22240.236Ha, gap: 99.9629Ha, ms/it: 127.64
