@@ -251,3 +251,34 @@ GM 24.9415. The notebook now prefers these files (each pinned by SHA-256) and ke
 as the fallback. Tested with a synthetic release in the same manifest format (including an `.xz`
 member): files picked by hash, verified, packed. yoyobar's and SomeJoint's public notebooks (24.94 /
 24.65) pack prebuilt files only; none contains decoder source or the 28-29 methods.
+
+
+## Experiments toward 30 (round 5): dqi jet-kernel headroom and distribution-aware pruning
+
+- **Where the qubit peak is** (`dqi/chunk_live_stage.py`, 893 source build, sampled every 2,000 lines):
+  unextract/companion_normalize and companion_fused_chart reach 891 (true peak 893 inside chunks);
+  jet reverse blocks (reverse multiply v / scale u / scale v) run at ~888; synthesis, convert and
+  unconvert at ~881; scan at 867. The jet reverse has no free headroom: extra scratch raises Q
+  (each qubit ~0.224% of cost, ~912 Toffolis at T = 407k).
+- **Jet kernel anatomy** (playbook/kit/decoder/exp/jet24/pro_jet.py): forward = out-of-place GF(2^24)
+  inverse (190) + HMR of the old u (phase debt deferred in a classical token) + v *= u^2 (99) + HMR
+  of the old v. The reverse must restore u_old, v_old and erase u' = inv(u_old) by measurement, whose
+  repayment is a phase of a linear function of an inverse (not free). That is why reverse (389) >
+  forward (269). Potential if the reverse matched the forward: -34.7k Toffolis (8.5%); worth it at up
+  to ~38 extra qubits.
+- **Bit-sliced simulator** (`dqi_dce/sim.c`, `compile_ops.py`, `run_stats.py`): compiles the 63.2M-op
+  circuit to arrays and simulates 4,096 shots in ~10 s with per-gate statistics; reproduces the
+  verifier's mean Toffolis exactly (407,444.2) and checks syndromes restored / ancillas zero.
+- **Distribution-aware dead-gate removal** (`analyze.py`, `sweep.py`; 102,400 natural shots + 4,096
+  per error weight 14-35): 15,838 Toffolis never fire in 4,096 shots, but 13,889 of them fire somewhere
+  in 102,400. Truly never firing in 192,512 shots: 1,200 ops = 788 Toffolis/shot (0.19%).
+  Trade-off (remove by firing-probability/saving order):
+
+  | expected failures / 102,400 | Toffolis saved | R | net dqi |
+  |---|---|---|---|
+  | 0 | 1,010 (0.25%) | 1.19126 | x1.0025 |
+  | 0.5 | 1,256 (0.31%) | 1.19126 | x1.0031 |
+  | 1 | 1,291 | 1.19673 | x0.9986 |
+  | 10 | 1,442 | 1.22901 | x0.9727 |
+
+  The lineage has already pruned its rare branches; at most +0.1% overall.
