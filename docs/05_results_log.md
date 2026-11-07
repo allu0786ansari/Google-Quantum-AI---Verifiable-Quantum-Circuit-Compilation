@@ -115,3 +115,20 @@ training of the vectors themselves.
 
 Training runs at about 1.2 s per epoch on this 2-core CPU; Google's baseline used 50,000
 epochs, so structural changes (fewer vectors) need GPU training.
+
+
+## Phase 0 (pipeline doc 06): Kaggle kickmix fix and data access
+
+- Cause of the Kaggle errors: `import kickmix` picked up the data's `kickmix/` folder as an
+  empty namespace package (`kickmix.__file__` was None), so `Circuit`, `CircuitBuilder` and
+  `GF2Field` were missing and every later cell failed.
+- Fix: `load_kickmix()` checks the imported module for the API and otherwise loads the
+  compiled `kickmix*.so` from the data by file path (folder search follows symlinks); a
+  wheel is pip-installed as a last resort; failure lists what was found.
+- `kagglehub.dataset_download` for `ahoirg/qcc-reproducible-circuit-assets` and
+  `marculera/dfthc-compact-pipeline` in the setup cell.
+- `REQUIRE_FRONTIER = True`: the notebook stops with a clear error if the frontier circuits
+  can't be built, instead of silently submitting a much lower score.
+- Tests: (1) simulated shadowing (fake empty `kickmix` module) with the competition's
+  `kickmix.so` -> all three frontier rows, estimate 24.494; (2) assets missing -> stops
+  with the RuntimeError.

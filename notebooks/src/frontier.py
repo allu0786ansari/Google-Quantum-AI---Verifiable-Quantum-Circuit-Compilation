@@ -5,7 +5,7 @@
 # participants and shared under Apache-2.0. We start from them, verify every one
 # with the official verifiers, and keep our own circuits (sections 2-4) as the
 # fallback. They come from **ahoirg's [QCC Reproducible Circuit Assets](https://www.kaggle.com/datasets/ahoirg/qcc-reproducible-circuit-assets), release 2**
-# (attach it to this notebook):
+# (downloaded with `kagglehub.dataset_download` in the setup cell):
 #
 # | Task | Component | Credits (see the dataset's CREDITS files for the full lineage) |
 # |---|---|---|
@@ -39,12 +39,7 @@ def _sha256(path):
 
 def find_assets():
     """Folder holding release 2 of the assets (v2-assets-manifest.json), or None."""
-    roots = [Path(p) for p in (LOCAL_ASSETS, os.environ.get('VQCC_ASSETS')) if p]
-    try:
-        import kagglehub
-        roots.append(Path(kagglehub.dataset_download(ASSETS_DATASET)))
-    except Exception as ex:
-        print('kagglehub assets lookup failed:', ex)
+    roots = [Path(p) for p in (LOCAL_ASSETS, os.environ.get('VQCC_ASSETS'), ASSETS_PATH) if p]
     roots.append(Path('/kaggle/input'))
     for root in roots:
         if root.exists():
@@ -123,4 +118,8 @@ if any(USE_FRONTIER.values()):
     try:
         FRONTIER = load_frontier()
     except Exception as ex:
+        if REQUIRE_FRONTIER:
+            raise RuntimeError('frontier circuits could not be built, so the submission would score far '
+                               'lower. Fix the cause below, or set REQUIRE_FRONTIER = False to continue '
+                               f'with our own circuits. Cause: {type(ex).__name__}: {ex}') from ex
         print('frontier components unavailable, using our own circuits:', ex)
