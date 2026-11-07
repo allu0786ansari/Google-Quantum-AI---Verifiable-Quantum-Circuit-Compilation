@@ -383,3 +383,16 @@ of the live state is impossible. Only nonlinear compression remains: the syndrom
 ~635 bits of entropy in 840 qubits, so ~205 qubits of slack exist in principle.
 Using them would need a new compact (nonlinear) state representation (track B3), a research problem
 with no measured route.
+
+
+## DQI-A started: companion chain specification (docs/09_dqi_companion_spec.md)
+
+Per call (11 calls/shot): companion_return 1,980, companion_fused_chart 838.6, companion_normalize
+574.0 Toffolis. The node chain is a GF(2^24) projective Möbius recurrence
+(N, D) <- (q_i D, N + h_i D) with det M_i = q_i classical. The reverse applies adjugates to (N', 1),
+gets (N0*y, y) with y = c0 N' + a0, divides, then needs a second scalar pass (99/head) to erase the
+scale y. Local alternatives (measure y, combined debts, keep D_f, accumulate a0/c0, merge passes) all
+need the chain value again or cost more qubits than Toffolis saved at the qubit peak
+(+48 qubits ~ 43k Toffoli-equivalents vs 21.8k saved). Only a projective-interface redesign of
+extract/synthesis/convert could remove it: a new architecture, ceiling ~ +3.2% overall before its
+own overheads.
