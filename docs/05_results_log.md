@@ -371,3 +371,15 @@ which can only be built from the 893-qubit source.
 With these, every task of the evaluated roadmap is measured, answered or not applicable, except R4
 (dqi unextract companion redesign, <= +3%, needs the 892 decoder's source) and R5 (loader compiler
 at frontier quality, an enabler with <= +1% alone).
+
+
+## Research plan v2, track DQI-B1 (state compression by algebraic invariants): negative
+
+GF(2) rank of the full 892-qubit state at the three occupancy peaks of the submitted decoder
+(lines 2,916,145 extract; 44,639,844 unconvert; 57,701,847 unextract), 4,096 verifier-style shots,
+with a constant row for affine dependencies (`dqi/peak_rank.py`): rank 892 of 892 at every peak,
+0 linear or affine dependencies. No qubit is a GF(2) combination of others, so linear compression
+of the live state is impossible. Only nonlinear compression remains: the syndromes carry
+~635 bits of entropy in 840 qubits, so ~205 qubits of slack exist in principle.
+Using them would need a new compact (nonlinear) state representation (track B3), a research problem
+with no measured route.
