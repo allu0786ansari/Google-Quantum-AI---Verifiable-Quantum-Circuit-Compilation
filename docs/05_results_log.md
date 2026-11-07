@@ -132,3 +132,27 @@ epochs, so structural changes (fewer vectors) need GPU training.
 - Tests: (1) simulated shadowing (fake empty `kickmix` module) with the competition's
   `kickmix.so` -> all three frontier rows, estimate 24.494; (2) assets missing -> stops
   with the RuntimeError.
+
+
+## Phase 1: scoring harness and measured openings
+
+`tools/harness.py` reproduces every frontier score exactly (invsqrt 21.098 in 1 s quick,
+dqi 65.107 in 6 s at 256 shots, chemistry 10.698 in 19 s, chemistry analytic model 10.698
+in 0.3 s) and prints the overall score with the other two tasks at the frontier.
+
+Openings measured (target: product of ratios ×1.75 to pass 29.5, ×1.84 for 30):
+
+- **Chemistry, lambda_eff.** `lambda_eff = sqrt(E_gap (2 Lambda - E_gap))`. E_gap sits on its
+  floor (3.914899), so lambda_eff ~ sqrt(Lambda). Lambda = 284.4 (LCU one-norm), floor 49:
+  -20% Lambda -> chemistry x1.12.
+- **Chemistry, shape.** Verifier model with the frontier loader cost scaled by output bits
+  (same lambda, accuracy NOT checked): (9,143,C=30,brot 7) cost x0.84, (9,143,20,7) x0.78,
+  (9,143,39,6) x0.82. At brot 8, C <= 20 doubles Q (the inner lookup jumps to k2 = 5).
+- **Chemistry, Q.** Q = 125 persistent + 303 temporary (inner state-prep lookup, size picked by
+  the verifier); stays ~390-430 for any frontier-like shape.
+- **dqi, failure budget.** Error weights 21-35 carry 99.99% of shots; w <= 20 appears ~5.6 times
+  in 102,400. R by failures: 0 -> 1.19126, 1 -> 1.19673, 5 -> 1.21311, 10 -> 1.22901
+  (~0.46% per failure), so dropping rare-weight paths pays if it saves more Toffolis/qubits.
+- **dqi, structure.** Already MBU-heavy (79k HMR, 809k conditioned CZ); Toffolis by stage:
+  unextract 94.4k, unconvert 53.2k, convert 52.6k, extract 53.2k, scan 44.3k, unsynthesis
+  38.2k, synthesis 31.5k. Source: 248-file q18 bundle in ahoirg's assets (dqi-source-bundle).
