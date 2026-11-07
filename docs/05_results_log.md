@@ -396,3 +396,10 @@ need the chain value again or cost more qubits than Toffolis saved at the qubit 
 (+48 qubits ~ 43k Toffoli-equivalents vs 21.8k saved). Only a projective-interface redesign of
 extract/synthesis/convert could remove it: a new architecture, ceiling ~ +3.2% overall before its
 own overheads.
+
+
+## DQI-A closed
+
+Projective (N, D) interface priced: extraction finishes all groups before synthesis, so carried
+denominators stay live through synthesis..unconvert (~881/892 qubits). All 11 groups: +264 qubits,
+net dqi x0.60. One group: +24 qubits, net x0.96. Scaled node values: not equivalent. Closed.

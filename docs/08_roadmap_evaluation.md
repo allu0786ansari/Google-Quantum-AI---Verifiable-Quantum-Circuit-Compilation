@@ -82,3 +82,7 @@ All negative; details in `05_results_log.md`:
 - R3: rotation angles are already LP-optimal for the verifier's margin.
 
 Open: R4 and R5 only.
+
+- R4 / DQI-A (companion chain) closed after specification and pricing (`09_dqi_companion_spec.md`):
+  local alternatives need the chain value again or exceed the qubit budget; the projective-interface
+  redesign is net x0.60-0.96 on dqi.

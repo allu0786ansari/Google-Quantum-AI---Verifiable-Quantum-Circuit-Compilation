@@ -74,3 +74,20 @@ Measured ceiling of this track if the projective redesign worked perfectly:
 - the companion excess is 37.3k Toffolis (9.2% of T): dqi x1.10, about +3.2% overall;
 - minus the cost of carrying projective pairs through synthesis/convert (more multiplies, plus
   24 extra qubits per carried denominator at the stages that are already near the peak).
+
+
+## 5. Projective-interface redesign priced (7 Nov): closed
+
+Extraction completes all 17 groups before synthesis (`decode`: `extract(b, S)`, then
+`synthesize(b, S)` on the transformed bank). A denominator carried projectively must therefore stay
+live through synthesis, convert, scan and their reverses. Those stages already run at ~881 of 892
+qubits.
+
+| Option | Extra qubits | Q^2 | Toffolis saved at most | Net dqi |
+|---|---|---|---|---|
+| carry D_f for all 11 companion groups | +264 | x1.68 worse | 37.3k (9.4%) | x0.60 |
+| carry D_f for the costliest group only | +24 | x1.055 worse | <= 3.4k (0.9%) | x0.96 |
+| fold D_f into scaled node values | 0 | - | - | not equivalent: downstream rational interpolation isn't homogeneous per node |
+
+DQI-A is closed: no local or interface-level change to the companion chain lowers the dqi cost
+under the decoder's qubit budget.
