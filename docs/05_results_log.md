@@ -282,3 +282,20 @@ member): files picked by hash, verified, packed. yoyobar's and SomeJoint's publi
   | 10 | 1,442 | 1.22901 | x0.9727 |
 
   The lineage has already pruned its rare branches; at most +0.1% overall.
+
+
+## Correction: where dqi's Toffolis really go (893 build, mean per shot, simulator + stage tags)
+
+| Stage | Forward | Reverse | Reverse - forward |
+|---|---|---|---|
+| extract / unextract | ~64k (extract 51.8k + inverse24/12, multiply v) | ~99k (unextract 51.6k + companion_return 21.8k + companion_fused_chart 9.2k + companion_normalize 6.3k + reverse jet ~10k) | **+35k** |
+| synthesis / unsynthesis | 32.2k | 41.9k | +9.8k |
+| convert / unconvert | ~60k (incl. aligned_route 3.0k) | ~61k | ~+1k |
+| scan | 44.3k (at floor) | — | — |
+
+The pro_jet kernel (forward 269 / reverse 389) runs only ~30 times in this build (2,970 / 99
+Toffolis in 'multiply v'), not 289 as in the older playbook decoder: its asymmetry is worth ~3.6k,
+not 35k. The large asymmetry is the companion-based return chain in unextract
+(exp/new/a01/companion.py, patched in exp/new/a14/decode_owner.py). Removing all of it would be
+-35k Toffolis (8.6% of T): dqi x1.094, about +3% overall, if it can be done without more qubits
+(unextract is also where the 893 peak sits).
