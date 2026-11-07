@@ -13,7 +13,7 @@ from model_l1_l2 import xn, ytrue
 from newton_band import band_mul
 
 
-def fit(K, deg, P, NZ, T):
+def fit(K, deg, P, NZ, T, tables=False):
     """P[k] = fractional bits of c_k (k >= 1); NZ[k] = z bits used at stage k; T = product cut."""
     nzb = 22 - K
     idx = xn >> nzb
@@ -60,6 +60,9 @@ def fit(K, deg, P, NZ, T):
     y = C[0][idx] / 2.0 ** T + rest
     rel = np.abs(y / ytrue - 1).max()
     widths = {k: int(C[k][ent].max()).bit_length() for k in range(deg + 1)}
+    if tables:
+        Yint = C[0][idx] - prod1
+        return dict(C=C, Y=Yint, rel=rel, widths=widths, K=K, deg=deg, NZ=NZ, T=T)
     return rel, prods, ands, widths, len(ent)
 
 

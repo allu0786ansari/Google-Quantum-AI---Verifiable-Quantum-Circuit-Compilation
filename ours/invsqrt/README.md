@@ -65,3 +65,26 @@ help, Q*C must be below that. Best case for the cubic route:
 
 That gives Q*C ~ 170-270k, ratio ~8-12. This matches the design doc's 9-16 estimate. It sits below the public
 21.25, and replacing it would cost about 13-20% of the overall score.
+
+
+## Complete circuit, layers I-1 to I-5 (`full_circuit.py`, `layer_poly.py`)
+
+| Layer | Implementation |
+|---|---|
+| I-1 | binary s (4 flags), CSWAP stages; flags cleared by measurement (`layer1.py`) |
+| I-2/I-3 | two lookups (c3,c2 then c1,c0) on 7 address bits; Horner rows `target -= z_j * (A >> (nz-j))`; Y's top bit is a constant 1 |
+| I-4 | 39-bit register: Y plus the constant bit plus 10 zeros, CSWAP shift by s (stages 1,2,4,8, data-carrying pairs only, 122 CSWAPs); 36 rotations, 1 T, 2 Clifford |
+| I-5 | unshift, reverse rows, measurement-based lookup deletes, MBU denormalise |
+
+Bit-exact with `poly_model` on all 3,133,452 inputs (0 failures, worst error 0.41 of tolerance).
+
+| Row adder | Q | Mean Toffolis | C | Ratio | Check |
+|---|---|---|---|---|---|
+| controlled adder per row | 126 | 5,349 | 5,594 | 2.95 | all x, 1 shot each |
+| AND row into scratch, then plain adder | 145 | 4,271 | 4,500 | **3.18** | **official verifier (quick): PASS** |
+
+For comparison, our earlier own design `notebooks/src/invsqrt.py` v4 scores **7.50**, fully verified on 200.5M
+shots. It is a piecewise quadratic on 512 segments (the parity of the shift is part of the address), with
+radix-4 Booth rows, rows subtracted only from the low bits they can change plus a borrow qubit, and
+row bits cleared by measurement. That design dominates the cubic route on both qubits and Toffolis,
+so v4 stays our own Benchmark I circuit.
