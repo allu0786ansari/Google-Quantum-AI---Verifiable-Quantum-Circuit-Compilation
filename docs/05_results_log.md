@@ -209,3 +209,18 @@ hours) and/or (b) dqi decoder changes at source level (rare-weight trimming agai
 
 The 893 source build also differs materially from the 891 binary (CCZ 37,324 vs 1,483 static;
 mean T 407,444 vs 396,922), so source-level work starts ~3% behind the submitted circuit.
+
+
+## Experiments toward 30 (round 4): chemistry loaders and 8-bit words
+
+| Experiment | Result | Verdict |
+|---|---|---|
+| Loader tensors (`chem_loaders/load.py`) | 15 x 85 x 35 mixed ANF tensors, density 0.45-0.50, all slices full rank; frontier certificates use 410-438 rank-1 pieces (205-219 paired terms); a dimension count gives ~335 pieces (~168 terms) as a floor for generic tensors | room in principle |
+| Public builder `tensorqrom.shared` (3 seeds, slots 0 and 5) | 249 terms vs frontier 219 / 205 | public loaders cost ~12% more; a new factorization starts ~7% behind on chemistry Toffolis |
+| Annealing on rank-2 groups (`anneal.py`) and Kauers-Moosbauer flip-graph walk on rank-1 pieces (`flipgraph.py`), both from the frontier certificates | no reduction (rank-2 flips raise ranks; only the low factor ever collides, 79 distinct values) | frontier certificates are a strong local optimum for these moves |
+| Grid local search on the 8-bit two-body words (`gridmoves.py`): exact change of lambda_eff and error_2 for single +-1 word moves, Lagrangian with the KKT multiplier 0.36 lambda/mHa | 8 of 300 random moves improve, by ~1e-5 lambda | frontier words are grid-optimal; small edits can't buy anything |
+
+A single-row word change alters a slot's tensor by one rank-1 piece (ANF of a point indicator is a
+low (x) high product), so small edits would be cheap to patch, but there is nothing to gain from them.
+Chemistry now needs a factorization with substantially lower Lambda (>= ~10-15%) to pay for
+loaders built without the frontier's certificate optimizer.
