@@ -338,3 +338,22 @@ Conclusion: the public 24.94 portfolio is at the optimum of every generic lever 
 (weights, words, uncomputation, dead gates, qubit reuse). Further gains need new algorithms in
 specific kernels; the largest identified is the dqi unextract companion chain (<= +3% overall),
 which can only be built from the 893-qubit source.
+
+
+## Product reuse and the low-Lambda chemistry shape (both negative)
+
+- **Repeated AND products in the 892 decoder** (`dqi_dce/cse.py`): CCX/CCZ on a control pair whose
+  values are unchanged since an earlier product on the same pair: 276 ops, 269 Toffolis/shot (0.07%).
+  Product reuse is already applied.
+- **Low et al.'s shape (15, 57, 19)** (Lambda 180 in the paper under a CCSD(T) criterion) against the
+  current shape (8, 143, 44), same Hamiltonian-derived seed (marculera's `df_init.py`, eigen-leaves,
+  OMP bases) and the same 1,500 L-BFGS iterations on error_2:
+
+  | shape | error_2 at 1,500 | slope at the end |
+  |---|---|---|
+  | (8, 143, 44) | 67.2 mHa | ~4.5 mHa / 100 iterations |
+  | (15, 57, 19) | 164.2 mHa | ~2 mHa / 100 iterations |
+
+  The low-Lambda shape fits 2.4x worse and more slowly with fewer parameters; it is not a realistic
+  route to error_2 <= 20 mHa (rounding to 8 bits needs ~12-13 mHa continuous). Its verifier cost is
+  also worse at small B (Q 662). Chemistry stays with the (8-9, 143, 39-44) family.
