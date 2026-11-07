@@ -299,3 +299,28 @@ not 35k. The large asymmetry is the companion-based return chain in unextract
 (exp/new/a01/companion.py, patched in exp/new/a14/decode_owner.py). Removing all of it would be
 -35k Toffolis (8.6% of T): dqi x1.094, about +3% overall, if it can be done without more qubits
 (unextract is also where the 893 peak sits).
+
+
+## Confirmation test for chemistry retraining (negative)
+
+Question: can lambda_eff fall at error_2 = 20 mHa and E_gap = floor if the two-body vectors U move
+continuously (no 8-bit rounding, loader cost ignored)? This bounds what any retraining from the
+frontier basin could deliver.
+
+- Two-electron tensor low-rank factor: rank 786 at eigenvalue 1e-5 (0.07 mHa Frobenius truncation),
+  rank 1,042 at 1e-6 (0.008 mHa); exact metrics reproduced (`chem_pareto/pareto_metrics.py`).
+- Adam on an augmented Lagrangian diverges: a 1e-5 step on every parameter raises error_2 from 20 to
+  27 mHa (extremely stiff quartic).
+- Gradient projection with Newton restoration onto both active constraints (`chem_pareto/gproj.py`):
+  monotone descent with constraints held to 1e-8:
+
+  | iteration | lambda_eff | lower than frontier |
+  |---|---|---|
+  | 10 | 46.9866 | 0.041% |
+  | 30 | 46.9733 | 0.111% |
+  | 50 | 46.9566 | 0.147% |
+  | 80 | 46.9408 | 0.180% (gains per 10 iterations: 0.04% -> 0.007%) |
+
+Verdict: even the continuous upper bound is ~0.2-0.5%, before rounding to 8 bits and before the
+~12% loader penalty of re-building circuits. Chemistry retraining in this basin is not confirmed, so
+no GPU notebook.
