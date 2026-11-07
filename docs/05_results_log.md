@@ -156,3 +156,17 @@ Openings measured (target: product of ratios ×1.75 to pass 29.5, ×1.84 for 30)
 - **dqi, structure.** Already MBU-heavy (79k HMR, 809k conditioned CZ); Toffolis by stage:
   unextract 94.4k, unconvert 53.2k, convert 52.6k, extract 53.2k, scan 44.3k, unsynthesis
   38.2k, synthesis 31.5k. Source: 248-file q18 bundle in ahoirg's assets (dqi-source-bundle).
+
+
+## Experiments toward 30 (round 1): cheap levers on the frontier
+
+| Experiment | Result | Verdict |
+|---|---|---|
+| Chemistry: refit W (= `H2_I`) only, words/w fixed (error_2 is W-independent), SLSQP on lambda_eff with E_gap floor, analytic gradients (`tools/experiments/chem_w_refit.py`) | lambda_eff 47.025650 -> 47.025592; Lambda split h1 13.13 + h2 271.26 | frontier already W-optimal; no gain |
+| Chemistry: loader structure | 3,131 paired-product terms (205-219 per slot) + 78 high-cache + 11 low-cache ANDs per circuit; words carry bit7 = bit6 so one qubit per word is a free ancilla | near the floor for this table; a GF(2) term search could save a few % of loader Toffolis (< 2% on chemistry) |
+| invsqrt: rotations | 41 Z_POW angles already individually tuned (not powers of two); worst error 0.99932 of tolerance | margin x10 would save ~19 Toffoli-eq (1.2%) and needs better arithmetic; small |
+
+Conclusion: the frontier is optimal on the inexpensive levers. Reaching 30 needs (a) a new
+chemistry factorization (retraining w/u, e.g. brot 7 or smaller C, at the 20 mHa limit; GPU
+hours) and/or (b) dqi decoder changes at source level (rare-weight trimming against the
+0.46%-per-failure budget, the unextract stage).
