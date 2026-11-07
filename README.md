@@ -34,7 +34,8 @@ verifiers.
 | dqi | **65.11** | public frontier (credited) | 891 qubits, 396,922 Toffolis; full verify PASS, 0 failures. Ours: 1.53 |
 | dfthcsos | **10.70** | public frontier (credited) | C39 table, 428 qubits, λ_eff 47.03; full verify PASS. Ours: 1.00 |
 
-Overall from fully verified components: **24.49**. The notebook builds the frontier from
+Overall from fully verified components: **24.49** (ahoirg build); **24.94** with heliosli's newer
+public release attached (`heliosli/qcc-circuits-live`, preferred automatically when present). The notebook builds the frontier from
 ahoirg's *QCC Reproducible Circuit Assets* and falls back to our own circuits, then the baseline.
 
 ## Submission notebook

@@ -240,3 +240,14 @@ loaders built without the frontier's certificate optimizer.
 
 Stacking realistic shares of these (dqi x1.15, chemistry x1.2, invsqrt x1.03) gives about 28.
 That matches the 28-29 leaders more plausibly than any single breakthrough.
+
+
+## Public frontier update: heliosli's release (local GM 24.94)
+
+heliosli's `the-dataset-is-public-now-enjoy` (v17), dataset `heliosli/qcc-circuits-live`, portfolio
+`v812e4edf89e_y33_ay3`: invsqrt 21.2464 (62 qubits, 1,576.6 Toffoli-eq), dqi 65.2156 (892 qubits,
+395,370 mean Toffolis), dfthcsos 11.198 ((8, 143, 44), lambda_eff 46.893, 14,966 Toffolis, 427 qubits);
+GM 24.9415. The notebook now prefers these files (each pinned by SHA-256) and keeps ahoirg's build
+as the fallback. Tested with a synthetic release in the same manifest format (including an `.xz`
+member): files picked by hash, verified, packed. yoyobar's and SomeJoint's public notebooks (24.94 /
+24.65) pack prebuilt files only; none contains decoder source or the 28-29 methods.
