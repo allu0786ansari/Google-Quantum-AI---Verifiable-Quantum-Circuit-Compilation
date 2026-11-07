@@ -195,3 +195,17 @@ hours) and/or (b) dqi decoder changes at source level (rare-weight trimming agai
   Stage plan (playbook/kit/decoder/decode.py): mask projection, initial linear maps, extract (jet
   kernel x289: forward 290, reverse 393 Toffolis at 43 private qubits; the reverse is costlier
   because of the qubit cap), synthesis, convert, scan, then the inverses.
+
+
+## Experiments toward 30 (round 3): dqi
+
+| Experiment | Result | Verdict |
+|---|---|---|
+| Generic measurement-based uncomputation: Toffolis in XOR-only qubit tails ending at a reset/end (891 binary, `tails.py`) | 0 CCX (14 tails; 79,399 lifetimes already end in HMR) | closed |
+| Same with exact lifetimes: 893 source rebuilt with a builder proxy tagging every `free()` (`build_tagged.py`, `tails_free.py`) | 44 CCX convertible out of 482,802 static (121,376 HMR endings) | closed: MBU is already used everywhere it applies |
+| Qubit relabelling: conservative static liveness (`static_live.py`) | peak 891 | inconclusive |
+| Exact sampled occupancy: whole 891 circuit run in 20k-line chunks on verifier-style inputs (256 shots, 30 s, `chunk_live.py`) | all 891 qubits nonzero at once at 22 points; >= 889 at 186 points (extract and unextract) | Q = 891 is real; -2 qubits would need ~186 sites changed for +0.15% overall |
+| Field arithmetic | GF(2^24) products 99-105 Toffolis (e.g. 7 GF(64) multiplies x 15), GF(2^12) inverse 66, cube 28 | at best-known bilinear complexity |
+
+The 893 source build also differs materially from the 891 binary (CCZ 37,324 vs 1,483 static;
+mean T 407,444 vs 396,922), so source-level work starts ~3% behind the submitted circuit.
