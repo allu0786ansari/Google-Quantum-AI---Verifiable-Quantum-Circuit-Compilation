@@ -71,3 +71,14 @@ Ordered by expected gain per effort. Each item has a kill criterion.
 opening supports 30. The ×1.75 product the 28–29 leaders imply would need an unpublished
 structural idea (most plausibly a different dqi decoder design), which the evidence here doesn't
 point to.
+
+
+## Update: R1-R3 and Tasks 6/14 executed (7 Nov)
+
+All negative; details in `05_results_log.md`:
+- R1: 0 Clifford-reducible windows (invsqrt, and 99.6k sampled dqi Toffolis).
+- R2: inversions are 3.0% of dqi T.
+- Task 14: tree already depth 6.
+- R3: rotation angles are already LP-optimal for the verifier's margin.
+
+Open: R4 and R5 only.

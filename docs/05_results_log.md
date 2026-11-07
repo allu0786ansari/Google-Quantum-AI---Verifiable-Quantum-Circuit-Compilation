@@ -357,3 +357,17 @@ which can only be built from the 893-qubit source.
   The low-Lambda shape fits 2.4x worse and more slowly with fewer parameters; it is not a realistic
   route to error_2 <= 20 mHa (rounding to 8 bits needs ~12-13 mHa continuous). Its verifier cost is
   also worse at small B (Q 662). Chemistry stays with the (8-9, 143, 39-44) family.
+
+
+## Remaining roadmap tests (Tasks 6, 14, 17 / R1-R3) on the 24.94 baseline: all negative
+
+| Test | Method | Result |
+|---|---|---|
+| R1 exact local rewrites (Task 17) | windows of <= 8 wires grown around every unconditioned Toffoli (commuting gates skipped, conditioned/measurement gates as barriers); exact action on all 2^k inputs; a window is removable if its net action is an affine permutation with a phase polynomial of degree <= 2 (`rewrite/rewrite_scan.py`, unit-tested on a planted compute/uncompute pair) | invsqrt: 0 windows over 1,196 Toffolis. dqi 892: 0 windows over 99,601 Toffolis sampled from extract, synthesis, convert, unconvert, unsynthesis, unextract |
+| R2 inversion variants (Task 6) | share of mean Toffolis inside inversion-tagged blocks of the 892 decoder | 3.04% (inverse12 8.1k, inverse24 3.9k); inverse12 already 66 Toffolis. A 20% cheaper inversion is 0.2% overall: not worth building |
+| Task 14 Givens trees | depth of the baseline tree | depth 6, mean path 2.95 (chain: 37.5), already optimised; new trees also need new loaders (+12% with the public builder) |
+| R3 rotation retune (Task 21) | per-x phase error and the 41 rotation-qubit values over all 3,133,452 x (kickmix, split at each rotation); minimax LP maximising the verifier's absolute margin min_x (tol - |error|), cutting planes (`rewrite/angle_lp.py`) | reproduces the verifier's eps exactly (2.434e-13). LP optimum margin = current margin (3.1766e-12 turns): the binding input's error does not depend on the angles. Maximising the worst ratio instead (0.9993 -> 0.9490) shrinks the absolute margin and raises cost |
+
+With these, every task of the evaluated roadmap is measured, answered or not applicable, except R4
+(dqi unextract companion redesign, <= +3%, needs the 892 decoder's source) and R5 (loader compiler
+at frontier quality, an enabler with <= +1% alone).

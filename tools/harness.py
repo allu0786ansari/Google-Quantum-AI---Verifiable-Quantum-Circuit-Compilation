@@ -43,7 +43,7 @@ def score_invsqrt(path, max_x=65536, full=False):
     import kickmix as km
     from invsqrt import verify_submission_invsqrt as V
     c = km.Circuit.from_file(path)
-    spec = (V.ProblemSpecInvSqrt.benchmark_instance() if full else
+    spec = (V.ProblemSpecInvSqrt.for_n_p(10) if full else
             V.ProblemSpecInvSqrt(width=22, max_x=max_x, beta=V.Fraction(1), precision_bits=24,
                                  shots_per_x=4, system_qubits=0))
     r = V.verify(c, spec, batch_size=256, max_workers=os.cpu_count())
