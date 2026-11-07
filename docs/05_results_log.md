@@ -170,3 +170,28 @@ Conclusion: the frontier is optimal on the inexpensive levers. Reaching 30 needs
 chemistry factorization (retraining w/u, e.g. brot 7 or smaller C, at the 20 mHa limit; GPU
 hours) and/or (b) dqi decoder changes at source level (rare-weight trimming against the
 0.46%-per-failure budget, the unextract stage).
+
+
+## Experiments toward 30 (round 2): chemistry at frozen words, dqi source build
+
+- **Fast exact chemistry metrics** (`tools/experiments/fastfit.py`): with the angle words frozen
+  (so the 15 loaders are unchanged), error_2^2 = sum_kl (w_k^T K w_l)^2 - 2 sum_k w_k^T M w_k + ||T'||^2
+  with 143x143 blocks K = (U U^T)^2 and M = (bb|b'b') + shift terms. Reproduces the verifier to all
+  printed digits (error_2 19.99965 mHa, lambda_eff 47.025650, Lambda 284.3928); milliseconds per
+  evaluation, JAX gradients.
+- **KKT check** (`kkt.py`): the frontier (w, W) is a KKT point of min lambda_eff s.t. error_2 <= 20 mHa,
+  E_gap >= floor (relative residual 0.17%). Multipliers: 0.36 lambda per mHa of error_2 (0.76% per mHa),
+  5.7 lambda per Ha of gap.
+- **Copy split / drop** (`refit.py --add/--drop`): exact splits (1/sqrt2) to C = 40, 42 and refits give
+  lambda_eff 47.0349 / 47.0336 at error_2 19.995: no gain; each copy layer costs 0.56% of Toffolis.
+- **7-bit angles** (`chem_reround.py`): plain re-rounding of the frontier words gives error_2 455 mHa
+  (limit 20), lambda_eff 74.9: the words are tuned to 8 bits; 7 bits needs a new factorization.
+- **Shape model**: C 39 -> 30 at the same lambda lifts the overall score only to 24.93; a new
+  factorization would also need new loader certificates (the public generic builder costs ~7% more
+  loader Toffolis than the frontier's).
+  => Chemistry has ~1-3% overall upside; not worth GPU time now.
+- **dqi source build**: ahoirg's `build_dqi.py` rebuilds the 893-qubit hybrid6 decoder from the
+  248-file source bundle hash-exactly (fb2da4f2..., 482,802 static Toffolis) in 175 s, 2.5 GB peak.
+  Stage plan (playbook/kit/decoder/decode.py): mask projection, initial linear maps, extract (jet
+  kernel x289: forward 290, reverse 393 Toffolis at 43 private qubits; the reverse is costlier
+  because of the qubit cap), synthesis, convert, scan, then the inverses.
