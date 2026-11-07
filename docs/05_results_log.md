@@ -224,3 +224,19 @@ A single-row word change alters a slot's tensor by one rank-1 piece (ANF of a po
 low (x) high product), so small edits would be cheap to patch, but there is nothing to gain from them.
 Chemistry now needs a factorization with substantially lower Lambda (>= ~10-15%) to pay for
 loaders built without the frontier's certificate optimizer.
+
+
+## Headroom map (floors vs frontier)
+
+| Component | Frontier | Floor | Max gain on the task | Overall |
+|---|---|---|---|---|
+| dqi scan (Chien zero tests) | 44,275 | 4,025 positions x 11 (OR of 12 bits needs 11 ANDs) = 44,275 | none | 0 |
+| dqi qubits | 891 | ~845 (840 syndrome qubits + minimal scratch) | Q^2 x1.11 | +3.6% |
+| dqi jet reverse vs forward | 389 vs 269 Toffolis x 289 calls | reverse = forward | -35k Toffolis (-8.7%) | +2.8% |
+| dqi forward locator work | ~289 jets x ~3 GF(2^24) mult-equivalents (~2,600 GF(2^12)) | Berlekamp-Massey count ~2,400 GF(2^12) multiplies | small | ~0 |
+| chemistry loaders | 205-219 terms per slot | dimension count: k rank-2 matrices spanning 35 slices of 15x85 needs k >= 194 | x1.029 | +1% |
+| chemistry lambda_eff | Lambda 284 | Low et al. reach 180 under a looser accuracy test | up to x1.26 | up to +8% |
+| invsqrt rotations | 41 x ~7.2 Toffoli-eq (19% of C) | margin-limited | ~x1.03 | +1% |
+
+Stacking realistic shares of these (dqi x1.15, chemistry x1.2, invsqrt x1.03) gives about 28.
+That matches the 28-29 leaders more plausibly than any single breakthrough.
