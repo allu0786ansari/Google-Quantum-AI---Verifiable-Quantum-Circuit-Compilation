@@ -40,8 +40,37 @@ Key-equation layer (`ours/dqi/eea_model.py`, `decoder_v4.py`):
 | Design | Shape | brot | lambda_eff | T | Q | Ratio | Check |
 |---|---|---|---|---|---|---|---|
 | Our pipeline on the provided factorization | (65, 60, 60) | 12 | 49.30 | 93,237 | 730 | 1.00 | full |
-| Own factorization (training) | (8, 143, 44) | 8 | in training | | | | |
+| Own factorization, trained from our DF initialisation | (8, 143, 44) | - | 88 (not feasible) | - | - | - | did not reach the 20 mHa gate |
 
-## Combined
+Own compact factorization:
+- Initialisation (`ours/chem/df_init.py`): weighted pair-basis eigendecomposition of the
+  symmetry-shifted two-body tensor; 352 components split into 8 groups; greedy shared vectors and
+  least-squares W per group. Starting error 4.5 Ha.
+- Training: the starter kit's trainer on the paper's objective (eq. 48), 2 CPU cores, about 130 ms
+  per epoch. After 12,000 epochs: error 64 mHa, Lambda 784 Ha, lambda_eff 88 Ha. Passing needs 20 mHa
+  and Lambda near 285 Ha (lambda_eff about 47). The trend points to 10^5 or more epochs, which is not
+  feasible on this machine. The run hit the 2-hour background limit before saving.
+- The cost model shows what such a factorization is worth with plain lookups, at brot 8, J 13, K 6:
+  ratio 6.9 at lambda_eff 46.9 (`tools/harness.chem_model`). The factorization is the binding step,
+  and it needs GPU training.
 
-See the final section, filled in once Benchmark III is done.
+## Combined (geometric mean of the three ratios)
+
+| Portfolio | invsqrt | dqi | dfthcsos | Overall |
+|---|---|---|---|---|
+| Our own architectures | 7.50 | 4.94 | 1.00 | **3.33** |
+| Public 24.94 portfolio (submitted) | 21.25 | 65.22 | 11.20 | **24.94** |
+| Best of both, per task | 21.25 | 65.22 | 11.20 | 24.94 |
+
+What the experiment shows:
+1. On every benchmark, the public circuits are 3x to 13x better than anything we built from the paper
+   in this session. The gaps are structural:
+   - invsqrt: the 62-qubit circuit computes in place;
+   - dqi: the 892-qubit decoder uses only 52 qubits beyond the 840 syndrome qubits, against our 961;
+   - dfthcsos: a GPU-trained compact factorization, with loaders compressed about 5x.
+2. Our new key-equation layer for dqi is a real architectural gain over the paper's reference: 7.2x
+   fewer Toffolis at slightly fewer qubits, and 3.2x the score of our earlier v2.
+3. The ranked next steps for our own pipeline:
+   - dqi: exact handling of abnormal Euclid steps (R 1.93 to 1.19, about 1.6x);
+   - dfthcsos: a compact factorization trained on a GPU (1.0 to about 5-7);
+   - invsqrt: an in-place design that drops the separate coefficient registers (Q 128 to about 80).
