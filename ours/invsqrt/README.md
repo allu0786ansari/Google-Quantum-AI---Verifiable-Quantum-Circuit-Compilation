@@ -41,3 +41,27 @@ per controlled add, the Newton step alone would exceed the public circuit's whol
 - carry-save accumulation, where a full adder is 1 Toffoli, instead of a controlled ripple add per row;
 - option: apply the phase of y0 and of the correction on separate registers with LP-fitted rotation
   angles, so y1 is never formed.
+
+
+### Cheaper formulations, measured (exact models over all 3,133,452 x)
+
+Target: worst relative error <= 2^-25.3, which leaves margin for the rotations under the 2^-24 tolerance.
+
+| Design | File | Best passing config | Worst error | Partial products | Est. forward Toffolis | Lookup words |
+|---|---|---|---|---|---|---|
+| Newton, row adds (above) | `newton_model.py` | FA 30, WE 19, F1 30 | 2^-24.8 | - | ~2,980 | seed 27 bits |
+| Newton, column-truncated, band-limited residual, phase split | `newton_band.py` | T1 28, T2 29, T3 30 | 2^-25.40 | 833 (792 ANDs) | ~1,560 | seed 27 bits |
+| No Newton: piecewise cubic, K=7 (96 entries), truncated Horner, c0 refit last | `poly_model.py` | T 29, z bits 15/14/11 | 2^-25.29 | 449 | ~850 | 29+23+18+13 = 83 bits |
+| Piecewise quadratic, K=8 (192 entries) | `poly_model.py` | T 29-30 | 2^-24.0 (fails) | 317-350 | - | 67 bits |
+
+Error isolation (Newton band): the correction cut T3 dominates (T3 = 28 alone gives 2^-24.2); T1 and T2
+cost ~0.3 bit each at 28-29.
+
+**Budget check.** The public circuit is 62 qubits / 1,281 Toffolis (Q*C = 79.4k, ratio 21.25). For ours to
+help, Q*C must be below that. Best case for the cubic route:
+- C: normalise 155 + lookups ~150 + Horner ~850 + uncompute with MBU ~300 + shift and rotations ~480,
+  about 1,900;
+- Q: 22 (x) + 4 (s) + 29 (y) + coefficient words + scratch, about 90-140.
+
+That gives Q*C ~ 170-270k, ratio ~8-12. This matches the design doc's 9-16 estimate. It sits below the public
+21.25, and replacing it would cost about 13-20% of the overall score.
