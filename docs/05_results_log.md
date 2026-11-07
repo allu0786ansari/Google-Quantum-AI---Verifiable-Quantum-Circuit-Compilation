@@ -324,3 +324,17 @@ frontier basin could deliver.
 Verdict: even the continuous upper bound is ~0.2-0.5%, before rounding to 8 bits and before the
 ~12% loader penalty of re-building circuits. Chemistry retraining in this basin is not confirmed, so
 no GPU notebook.
+
+
+## Checks on the 24.94 baseline (heliosli's release, all 18 files hash-matched)
+
+| Component | Check | Result |
+|---|---|---|
+| dfthcsos (8, 143, 44) | exact fast metrics: lambda_eff 46.89275, error_2 19.99999998 mHa, error_1 19.9999998 mHa, gap 3.9148982 (floor); KKT test of (w, W) | relative KKT residual 0.23%: already optimal, both error limits active, no slack |
+| invsqrt (62 qubits) | exhaustive bit-sliced simulation over all 3,133,452 x x 4 measurement seeds (18 s); sim mean 1,281.474 Toffolis | 29 conditioned gates never fire = 0.056 Toffolis/shot; no control constantly 1: nothing to prune |
+| dqi (892 qubits) | 58.27M ops simulated; sim mean 395,368.9 (verifier 395,370); 8,081 Toffolis never fire in 4,096 shots | 7,736 of them fire within 102,400 natural shots; the remainder is ~0.1% of dqi. Low-weight strata (w = 14) fail by design: the decoder spends its failure budget on rare low weights |
+
+Conclusion: the public 24.94 portfolio is at the optimum of every generic lever measured
+(weights, words, uncomputation, dead gates, qubit reuse). Further gains need new algorithms in
+specific kernels; the largest identified is the dqi unextract companion chain (<= +3% overall),
+which can only be built from the 893-qubit source.

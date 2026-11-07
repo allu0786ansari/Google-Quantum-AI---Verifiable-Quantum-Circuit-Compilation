@@ -41,8 +41,8 @@ int main(int argc,char**argv){
   }
   f=fopen(argv[9],"wb"); fwrite(st,4,(size_t)nops*4,f); fclose(f);
   // final check: nonzero ancillas (q>=840)
-  long bad=0; for(int q=840;q<nq;q++) for(int w=0;w<W;w++) bad+=__builtin_popcountll(Q[(size_t)q*W+w]);
+  long bad=0; for(int q=(nq<840?22:840);q<nq;q++) for(int w=0;w<W;w++) bad+=__builtin_popcountll(Q[(size_t)q*W+w]);
   fprintf(stderr,"done; nonzero ancilla bits at end: %ld\n",bad);
   // dump final syndromes for check
-  f=fopen("final_q.bin","wb"); fwrite(Q,8,(size_t)840*W,f); fclose(f);
+  { int nd = nq < 840 ? nq : 840; f=fopen("final_q.bin","wb"); fwrite(Q,8,(size_t)nd*W,f); fclose(f);}
   return 0;}
