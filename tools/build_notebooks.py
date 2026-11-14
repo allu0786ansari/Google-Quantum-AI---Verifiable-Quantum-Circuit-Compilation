@@ -18,6 +18,7 @@ Outputs:
     notebooks/invsqrt.ipynb           setup + invsqrt only
     notebooks/dqi.ipynb               setup + dqi only
     notebooks/dfthcsos.ipynb          setup + dfthcsos only
+    notebooks/vqcc_public_best.ipynb  best-of-public portfolio, verified (from notebooks/src/public_best.py)
 """
 from pathlib import Path
 
@@ -66,6 +67,8 @@ def write(path, parts):
 
 write(ROOT / 'vqcc_submission.ipynb',
       [src('intro'), src('setup'), src('frontier'), *(src(t) for t in TASKS), src('package')])
+
+write(ROOT / 'vqcc_public_best.ipynb', [src('public_best')])
 
 for task, title in TASKS.items():
     intro = (f'# %% [markdown]\n# # {title}\n#\n'
