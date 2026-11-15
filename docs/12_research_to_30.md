@@ -132,3 +132,15 @@ the plain 8-bit rounding variance D0:
 So this lever is real but small: it does not carry the composite past 28 on its own.
 The notebook now also discovers the top-scoring public notebooks by itself (`AUTO_DISCOVER`), so a later
 run picks up newer public circuits without editing the source list.
+
+## 8. Update, 15 Nov: no downloaded circuits
+
+Decision: we do not submit other teams' finished circuits. `notebooks/vqcc_public_best.ipynb` is removed.
+`notebooks/vqcc_from_source.ipynb` builds all three tasks from published generator source at a pinned
+commit (46-qubit invsqrt and 889-qubit dqi by Syed Asad Ali, Apache-2.0; chemistry recipe and loader
+compiler by Francisco Angulo de Lafuente, MIT or Apache-2.0), with credits in the notebook, then runs the
+official verifiers and packages the result. Expected from the authors' receipts: about 27.0.
+
+Tested here: setup, the pinned download, the archive hashes, unpacking, verification and packaging.
+Not tested here: the three generator runs themselves (this session's permissions block running them).
+The generators are still other people's work; what is ours is listed in the notebook's last section.
