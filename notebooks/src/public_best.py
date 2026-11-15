@@ -26,6 +26,10 @@
 # Result of the 15 Nov 2026 run (all three full official verifications passed): invsqrt 78,719.5 (46 qubits),
 # dqi 3.6021e11 (889 qubits, 0 failures), dfthcsos 2.95128e8; estimated overall **27.30**.
 #
+# With `AUTO_DISCOVER = True` the notebook also asks Kaggle for the top-scoring public notebooks of the
+# competition and scans their outputs, so a later run picks up newer public circuits by itself. For that,
+# add your API token as a secret named `KAGGLE_API_TOKEN` (*Add-ons → Secrets*); without it the fixed list is used.
+#
 # Nothing here trusts a file by its name: a circuit is used only after the official verifier passes it.
 
 # %%
@@ -36,6 +40,9 @@ INVSQRT_FULL_TOP = 1     # fully verify this many invsqrt candidates (best by th
 STOP_IF_BELOW = 26.0     # raise instead of writing a zip when the estimated overall score is lower than this
 LOCAL_DATA = None        # only for running outside Kaggle: folder with verifiers/ and sample_submission/
 EXTRA_INPUTS = []        # extra folders to scan for circuits (outside Kaggle)
+AUTO_DISCOVER = True     # also pull the outputs of the top-scoring public notebooks of this competition
+AUTO_TOP = 8             # how many of them
+SECOND_SALT = 'vqcc-second-seed'   # re-verify the chosen invsqrt and chemistry with other measurement outcomes ('' = skip)
 SUBMIT = False           # True: also submit submission.zip with the Kaggle API (needs the secret below)
 SUBMIT_MESSAGE = 'best-of-public portfolio, fully verified'
 
@@ -196,7 +203,7 @@ def unpack(roots):
                 if low.endswith('.zip') and f.stat().st_size < 4 << 30:
                     with zipfile.ZipFile(f) as z:
                         members = [m for m in z.namelist() if m.lower().endswith(WANTED)]
-                        if members:
+                        if members and sum(z.getinfo(m).file_size for m in members) < 8 << 30:
                             dest = CACHE / ('zip_' + hashlib.sha256(str(f).encode()).hexdigest()[:12])
                             if not dest.exists():
                                 z.extractall(dest, members=members)
@@ -213,7 +220,35 @@ def unpack(roots):
     return new
 
 
+def discover(top):
+    """Handles of the top-scoring public notebooks of the competition (empty list when the API is not reachable)."""
+    try:
+        try:
+            from kaggle_secrets import UserSecretsClient
+            os.environ.setdefault('KAGGLE_API_TOKEN', UserSecretsClient().get_secret('KAGGLE_API_TOKEN'))
+        except Exception as ex:
+            print(f'  no KAGGLE_API_TOKEN secret ({type(ex).__name__}); trying without it')
+        from kagglehub.clients import build_kaggle_client
+        from kagglesdk.kernels.types.kernels_api_service import ApiListKernelsRequest
+        from kagglesdk.kernels.types.kernels_enums import KernelsListSortType
+        req = ApiListKernelsRequest()
+        req.competition = COMPETITION
+        req.sort_by = KernelsListSortType.SCORE_DESCENDING
+        req.page_size = top
+        with build_kaggle_client() as client:
+            kernels = client.kernels.kernels_api_client.list_kernels(req).kernels
+        refs = [k.ref for k in kernels if getattr(k, 'ref', None)]
+        print(f'  auto-discovery: {len(refs)} notebook(s): {refs}')
+        return refs
+    except Exception as ex:
+        print(f'  auto-discovery off ({type(ex).__name__}: {str(ex)[:120]}); using the fixed source list')
+        return []
+
+
 print('downloading sources')
+if AUTO_DISCOVER:
+    known = {h for _, h in SOURCES}
+    SOURCES = SOURCES + [('notebook', h) for h in discover(AUTO_TOP) if h not in known]
 roots = [p for p in (fetch(k, h) for k, h in SOURCES) if p]
 roots += [Path(p) for p in EXTRA_INPUTS]
 if Path('/kaggle/input').exists():
@@ -294,8 +329,8 @@ def invsqrt_quick(path):
     return r['num_qubits'] * (r['toffoli_count'] + (r['t_count'] + r['rotation_count'] * 28.0) / 4), r
 
 
-def invsqrt_full(path):
-    r = VINV.verify(load_circuit(path), VINV.ProblemSpecInvSqrt.for_n_p(10), max_workers=os.cpu_count())
+def invsqrt_full(path, salt=''):
+    r = VINV.verify(load_circuit(path), VINV.ProblemSpecInvSqrt.for_n_p(10), salt=salt, max_workers=os.cpu_count())
     return r['score'], r
 
 
@@ -317,8 +352,8 @@ def dqi_verify(path, full):
     return score, r
 
 
-def chem_verify(folder):
-    r = verify_chem(str(folder))
+def chem_verify(folder, salt=''):
+    r = verify_chem(str(folder), salt=salt)
     return r['score'], r
 
 
@@ -340,11 +375,17 @@ CHOSEN = {}
 
 # --- dfthcsos: the official verifier is fast, so every candidate is fully verified
 print('dfthcsos')
-best = None
+ranked = []
 for key, folder in cands['dfthcsos'].items():
     score, info = attempt(f'{key[:12]} full', chem_verify, folder)
-    if score and (best is None or score < best[0]):
-        best = (score, folder, info, 'full')
+    if score:
+        ranked.append((score, folder, info, 'full'))
+ranked.sort(key=lambda r: r[0])
+best = None
+for cand in ranked:                    # a circuit must also pass with other measurement outcomes
+    if not SECOND_SALT or attempt(f'{cand[1].name} second salt', chem_verify, cand[1], SECOND_SALT)[0]:
+        best = cand
+        break
 if best:
     CHOSEN['dfthcsos'] = dict(score=best[0], path=best[1], check=best[3],
                               detail={k: best[2].get(k) for k in ('lambda_eff', 'toffoli_count', 'num_qubits', 'brot')})
@@ -371,6 +412,10 @@ if VERIFY == 'full':
             best = (score, path, info, 'full')
 elif ranked:
     best = (ranked[0][0], ranked[0][1], ranked[0][2], 'quick estimate')
+if best and VERIFY == 'full' and SECOND_SALT:
+    if not attempt(f'{best[1].name} second salt', invsqrt_full, best[1], SECOND_SALT)[0]:
+        raise RuntimeError(f'{best[1]} passes with the default seed but fails with another one: remove this source '
+                           '(EXTRA_INPUTS / SOURCES / AUTO_DISCOVER) and run again')
 if best:
     CHOSEN['invsqrt'] = dict(score=best[0], path=best[1], check=best[3],
                              detail={k: best[2].get(k) for k in ('num_qubits', 'toffoli_count', 'rotation_count')})

@@ -108,3 +108,27 @@ verifiers and keeps the cheapest verified circuit per task. Kaggle run of 15 Nov
 
 All three chosen circuits came from the same public archive. The source-built 46-qubit invsqrt (80,171 by the
 quick estimate) and the source-built 889-qubit dqi were also found and ranked lower.
+
+## 7. Update, 15 Nov: what the chemistry coding lever is worth (measured)
+
+Experiment `ours/chem/coding_noise.py` on the public (8, 143, 44) table whose bit 0 is already coded
+on all 75 columns. Cost of forcing one more bit-plane into RM(1,4) per 16-address block, in units of
+the plain 8-bit rounding variance D0:
+
+| Bit-plane | Plain nearest codeword | Sensitivity-weighted codeword | Weighted, vectors sorted by importance |
+|---|---|---|---|
+| bit 1 | 11.4 | **1.70** | 4.0 |
+| bit 2 | 45.1 | 6.9 | 18.1 |
+
+- Weighted decoding cuts the added error variance 6.7x. Sorting vectors by importance makes it worse:
+  important vectors should be spread across blocks, a few per block, where the 5 free coefficients of an
+  affine code word can match them exactly.
+- From the public training logs, lambda_eff moves about 0.34% per mHa of error budget
+  (47.255 at 19.49 mHa, 47.214 at 19.75 mHa).
+- Coding bit 1 on every column removes about 10% of the products, about 4% of the Toffolis. With the
+  weighted decoder the price is roughly 1% of lambda_eff after a refit. Net: about +3% on dfthcsos,
+  about +1% on the composite. Bit 2 is too expensive with RM(1,4); it needs a weaker code.
+
+So this lever is real but small: it does not carry the composite past 28 on its own.
+The notebook now also discovers the top-scoring public notebooks by itself (`AUTO_DISCOVER`), so a later
+run picks up newer public circuits without editing the source list.
