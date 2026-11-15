@@ -18,7 +18,13 @@
 # 1. Add the competition as input (*Add input → Competition*). Turn **Internet on** in the notebook settings.
 # 2. Run all cells. If a source cannot be downloaded, attach it by hand (*Add input → Notebooks / Datasets*):
 #    everything under `/kaggle/input` is scanned as well.
-# 3. Download `/kaggle/working/submission.zip` and upload it on the competition's Submit page.
+# 3. Submit, one of:
+#    - download `/kaggle/working/submission.zip` and upload it on the competition's Submit page; or
+#    - *Save Version → Save & Run All*, then open the saved version's **Output** tab and press *Submit to competition*; or
+#    - set `SUBMIT = True` (section 6) to submit from the notebook with your own API token.
+#
+# Result of the 15 Nov 2026 run (all three full official verifications passed): invsqrt 78,719.5 (46 qubits),
+# dqi 3.6021e11 (889 qubits, 0 failures), dfthcsos 2.95128e8; estimated overall **27.30**.
 #
 # Nothing here trusts a file by its name: a circuit is used only after the official verifier passes it.
 
@@ -26,10 +32,12 @@
 # ---- Settings ---------------------------------------------------------------
 VERIFY = 'full'          # 'full': official verification of the chosen circuits (about 30-60 min on Kaggle)
                          # 'quick': reduced checks, scores are estimates (about 10 min)
-INVSQRT_FULL_TOP = 2     # fully verify this many invsqrt candidates (best by the quick estimate) and keep the best
+INVSQRT_FULL_TOP = 1     # fully verify this many invsqrt candidates (best by the quick estimate) and keep the best
 STOP_IF_BELOW = 26.0     # raise instead of writing a zip when the estimated overall score is lower than this
 LOCAL_DATA = None        # only for running outside Kaggle: folder with verifiers/ and sample_submission/
 EXTRA_INPUTS = []        # extra folders to scan for circuits (outside Kaggle)
+SUBMIT = False           # True: also submit submission.zip with the Kaggle API (needs the secret below)
+SUBMIT_MESSAGE = 'best-of-public portfolio, fully verified'
 
 SOURCES = [              # (kind, handle); kind is 'notebook' (its output files) or 'dataset'
     ('notebook', 'leotang09/vqcc-t7421-submission'),
@@ -439,4 +447,29 @@ shutil.rmtree(CACHE, ignore_errors=True)
 shutil.rmtree(SUB, ignore_errors=True)
 print(f'{zip_path} ({zip_path.stat().st_size / 1e6:.1f} MB, {len(names)} files): upload this file on the Submit page')
 json.dump({t: dict(score=c['score'], ratio=ratios[t], check=c['check'], source=str(c['path']), **c['detail'])
-           for t, c in CHOSEN.items()} | {'overall': overall}, open(OUT / 'report.json', 'w'), indent=1, default=str)
+           for t, c in CHOSEN.items()} | {'overall': overall, 'submission_zip_sha256': sha256(zip_path)},
+          open(OUT / 'report.json', 'w'), indent=1, default=str)
+
+# %% [markdown]
+# ## 6. Submit (optional)
+#
+# Off by default. To submit from the notebook: *Add-ons → Secrets*, add a secret named `KAGGLE_API_TOKEN`
+# holding your Kaggle API token, attach it to this notebook, and set `SUBMIT = True` in the settings cell.
+# Never paste the token into a cell: notebook versions can be shared.
+# The competition limits submissions per day, and this cell uses one of them.
+
+# %%
+if SUBMIT:
+    import subprocess
+    if overall < STOP_IF_BELOW or VERIFY != 'full' or missing:
+        raise RuntimeError('not submitting: the portfolio is incomplete or was not fully verified')
+    from kaggle_secrets import UserSecretsClient
+    env = dict(os.environ, KAGGLE_API_TOKEN=UserSecretsClient().get_secret('KAGGLE_API_TOKEN'))
+    res = subprocess.run(['kaggle', 'competitions', 'submit', '-c', COMPETITION, '-f', str(zip_path),
+                          '-m', f'{SUBMIT_MESSAGE} (local estimate {overall:.4f})'],
+                         env=env, capture_output=True, text=True)
+    print(res.stdout[-2000:], res.stderr[-2000:])
+    if res.returncode:
+        raise RuntimeError('the Kaggle API refused the submission; upload submission.zip on the Submit page instead')
+else:
+    print('SUBMIT is False: upload', zip_path, 'on the Submit page, or use Output -> Submit to competition')

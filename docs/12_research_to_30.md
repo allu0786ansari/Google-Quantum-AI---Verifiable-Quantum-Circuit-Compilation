@@ -93,3 +93,18 @@ the leaders will have moved too.
   and 889-qubit circuits were not rebuilt or re-verified here; their numbers are the authors' receipts.
 - The loader estimate assumes product count stays proportional to the bits that matter. That held for the
   one data point available (bit-0 codes); it is not yet demonstrated for unstructured masks.
+
+## 6. Update, 15 Nov: the public portfolio, fully verified on Kaggle
+
+`notebooks/vqcc_public_best.ipynb` downloads the public sources, verifies every candidate with the official
+verifiers and keeps the cheapest verified circuit per task. Kaggle run of 15 Nov (all full verifications passed):
+
+| Task | Score | Ratio | Detail |
+|---|---|---|---|
+| invsqrt | 78,719.5 | 26.382 | 46 qubits, 1,479.75 Toffolis, 33 rotations |
+| dqi | 3.6021e11 | 67.848 | 889 qubits, 382,600 Toffolis, 0 failures in 102,400 shots |
+| dfthcsos | 2.95128e8 | 11.370 | lambda_eff 46.897, 14,738 Toffolis, 427 qubits, 8-bit words |
+| **Overall (local estimate)** | | **27.30** | |
+
+All three chosen circuits came from the same public archive. The source-built 46-qubit invsqrt (80,171 by the
+quick estimate) and the source-built 889-qubit dqi were also found and ranked lower.
