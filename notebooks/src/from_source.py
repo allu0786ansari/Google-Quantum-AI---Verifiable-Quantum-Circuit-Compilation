@@ -19,7 +19,7 @@
 # ## What is ours in this notebook
 #
 # The build orchestration, the integrity checks, the full official verification with a second seed, and the
-# packaging. **No circuit-level technique of our own is applied yet**; section 6 lists what we are adding.
+# packaging. **No circuit-level technique of our own is applied**; section 6 lists what we tried.
 #
 # ## How to run on Kaggle
 # 1. *Add input → Competition* (this competition). Turn **Internet on** (the sources come from GitHub).
@@ -325,7 +325,7 @@ print(f'{zip_path} ({zip_path.stat().st_size / 1e6:.1f} MB, {len(names)} files)'
 #
 # | Addition | Status | Measured so far |
 # |---|---|---|
-# | Chemistry: sensitivity-weighted coding of bit 1 of the angle words, then a refit of the weights | experiment done, compiler not built | weighted code words add 1.70x the rounding variance instead of 11.4x; estimated +3% on dfthcsos |
+# | Chemistry: sensitivity-weighted coding of bit 1 of the angle words, then a refit of the weights | tested, does not work in this form | coding 15 of the 75 columns raises the two-body error from 20 to 43 mHa and a weight-only refit recovers 39 mHa (limit 20); it needs a retraining of the vectors with the code built in |
 # | Our own decoder (fixed-schedule Euclid, `ours/dqi`) | built and fully verified | ratio 4.94: far behind the 889-qubit generator, kept as research |
 # | Our own invsqrt (`notebooks/src/invsqrt.py`, v4) | built and fully verified | ratio 7.50: far behind the 46-qubit generator, kept as research |
 #

@@ -144,3 +144,24 @@ official verifiers and packages the result. Expected from the authors' receipts:
 Tested here: setup, the pinned download, the archive hashes, unpacking, verification and packaging.
 Not tested here: the three generator runs themselves (this session's permissions block running them).
 The generators are still other people's work; what is ours is listed in the notebook's last section.
+
+## 9. Update, 15 Nov: the bit-1 coding addition was tested and fails without retraining
+
+`ours/chem/code_bit1.py` applies the weighted bit-1 coding to the public table; errors are from our exact
+evaluator (`tools/experiments/fastfit.py`, which reproduces the table's own 19.978 mHa and lambda_eff 47.110).
+
+| Columns coded | Two-body error before refit | One-body error | After a weight-only refit |
+|---|---|---|---|
+| none (public table) | 19.98 mHa | 11.2 mHa | - |
+| last 3 batches (15 columns) | 42.6 mHa | 159 mHa | 39.1 mHa, infeasible (limit 20) |
+| batches 8-14 (35 columns) | 38.5 mHa (one-body rows less protected) | 156 mHa | not run |
+| all 75 columns | 203 mHa | 1,120 mHa | not run |
+
+Why: single words are far more sensitive than section 7 assumed. Changing the most sensitive word by two
+steps adds 65 mHa on its own (checked on five entries; the sensitivity model is right to within a factor
+1.4). The public table is not a rounded table: it was trained through the rounding, so its words are
+near-exact where it matters, and "units of rounding variance" in section 7 meant about 180 mHa, not 6.
+The estimate in section 7 (+3% on dfthcsos for about 1% of lambda_eff) is withdrawn.
+
+What would work is what the public pipelines do for bit 0: retrain the vectors in stages with the code as a
+constraint. That is a GPU training job with its own trainer, not a post-processing step.
